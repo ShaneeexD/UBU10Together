@@ -219,7 +219,7 @@ def fetch_replays_fallback_get(track_id: int, user_agent: str, amount: int = 25)
     return []
 
 
-def fetch_tmio_leaderboard(uid: str, user_agent: str, length: int = 20) -> List[Dict[str, Any]]:
+def fetch_tmio_leaderboard(uid: str, user_agent: str, length: int = 50) -> List[Dict[str, Any]]:
     """Fetch top N records from trackmania.io leaderboard for a map UID, with retries if empty."""
     url = f"https://trackmania.io/api/leaderboard/map/{uid}"
     params = {"offset": "0", "length": str(max(1, min(length, 200)))}
@@ -263,7 +263,7 @@ def fetch_tmio_author_time(uid: str, user_agent: str) -> Optional[int]:
     return None
 
 
-def compute_time_a(times_ms: List[int], c: float = 1.2, n: int = 20) -> Optional[float]:
+def compute_time_a(times_ms: List[int], c: float = 1.15, n: int = 20) -> Optional[float]:
     if len(times_ms) < n:
         return None
     top = times_ms[:n]
@@ -290,13 +290,13 @@ def compute_from_times(t_at: int, times: List[int]) -> Dict[str, Any]:
     records_count = len(times)
     t_wr = times[0] if records_count > 0 else t_at
     time_b = compute_time_b(int(t_at or 0), int(t_wr or 0), 0.5)
-    time_a_val = compute_time_a(times, 1.2, 20) if records_count >= 20 else None
+    time_a_val = compute_time_a(times, 1.15, 50) if records_count >= 50 else None
     if time_a_val is None:
         medal = time_b
         method = "Time_B"
     else:
-        medal = min(time_a_val, time_b)
-        method = "min(Time_A,Time_B)"
+        medal = time_a_val
+        method = "Time_A"
     return {
         "authorTime_ms": int(t_at or 0),
         "wrTime_ms": int(t_wr or 0),
@@ -318,7 +318,7 @@ def compute_for_map(m: Dict[str, Any], replays: List[Dict[str, Any]]) -> Dict[st
         except (TypeError, ValueError):
             t_at = 0
         
-        # Filter for Position 0-19 (0-indexed top 20) and extract ReplayTime
+        # Filter for Position 1-50 and extract ReplayTime
         top_20_replays: List[Dict[str, Any]] = []
         for r in replays:
             pos = r.get("Position")
@@ -328,8 +328,8 @@ def compute_for_map(m: Dict[str, Any], replays: List[Dict[str, Any]]) -> Dict[st
                 pos_i = int(pos)
             except (TypeError, ValueError):
                 continue
-            # Use positions 1-20 (TMX/TMIO alignment)
-            if 1 <= pos_i <= 20:
+            # Use positions 1-50 (aligned with TMIO top length)
+            if 1 <= pos_i <= 50:
                 top_20_replays.append(r)
         times: List[int] = []
         for r in top_20_replays:
@@ -349,16 +349,16 @@ def compute_for_map(m: Dict[str, Any], replays: List[Dict[str, Any]]) -> Dict[st
             # No replays with Position 0-19; use AuthorTime as fallback
             t_wr = t_at
         time_b = compute_time_b(t_at, t_wr, 0.5)
-        if records_count >= 20:
-            time_a_val = compute_time_a(times, 1.2, 20)
+        if records_count >= 50:
+            time_a_val = compute_time_a(times, 1.15, 50)
         else:
             time_a_val = None
         if time_a_val is None:
             medal = time_b
             method = "Time_B"
         else:
-            medal = min(time_a_val, time_b)
-            method = "min(Time_A,Time_B)"
+            medal = time_a_val
+            method = "Time_A"
         return {
             "authorTime_ms": int(t_at),
             "wrTime_ms": int(t_wr),
@@ -406,7 +406,7 @@ def main(argv: List[str]) -> int:
             continue
 
         t_at_tmio = fetch_tmio_author_time(uid, args.user_agent) or 0
-        tops = fetch_tmio_leaderboard(uid, args.user_agent, 20)
+        tops = fetch_tmio_leaderboard(uid, args.user_agent, 50)
         times: List[int] = []
         for e in tops:
             t = e.get("time") if isinstance(e, dict) else None
@@ -420,7 +420,7 @@ def main(argv: List[str]) -> int:
         if comp["recordsCount"] < 20 or comp["authorTime_ms"] == 0:
             time.sleep(1.0)
             t_at_tmio = fetch_tmio_author_time(uid, args.user_agent) or 0
-            tops = fetch_tmio_leaderboard(uid, args.user_agent, 20)
+            tops = fetch_tmio_leaderboard(uid, args.user_agent, 50)
             times = []
             for e in tops:
                 t = e.get("time") if isinstance(e, dict) else None
@@ -456,7 +456,7 @@ def main(argv: List[str]) -> int:
             },
             "source": {
                 "tmx_map_url": f"https://trackmania.exchange/maps/{track_id}" if track_id is not None else None,
-                "tmio_leaderboard_url": f"https://trackmania.io/api/leaderboard/map/{uid}?offset=0&length=20",
+                "tmio_leaderboard_url": f"https://trackmania.io/api/leaderboard/map/{uid}?offset=0&length=50",
                 "tmio_map_url": f"https://trackmania.io/api/map/{uid}",
                 "api_search": "https://trackmania.exchange/api/maps",
                 "source_preference": "tmio",

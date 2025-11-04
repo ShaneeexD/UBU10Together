@@ -43,7 +43,7 @@ def compute_and_render(author: str, prefix: str, ua: str, text_widget: Text, cal
                 continue
             # TMIO-only computation
             t_at_tmio = gt.fetch_tmio_author_time(uid, ua) or 0
-            tops = gt.fetch_tmio_leaderboard(uid, ua, 20)
+            tops = gt.fetch_tmio_leaderboard(uid, ua, 50)
             times = []
             for e in tops:
                 t = e.get("time") if isinstance(e, dict) else None
@@ -72,7 +72,7 @@ def compute_and_render(author: str, prefix: str, ua: str, text_widget: Text, cal
                 },
                 "source": {
                     "tmx_map_url": f"https://trackmania.exchange/maps/{track_id}",
-                    "tmio_leaderboard_url": f"https://trackmania.io/api/leaderboard/map/{uid}?offset=0&length=20" if uid else None,
+                    "tmio_leaderboard_url": f"https://trackmania.io/api/leaderboard/map/{uid}?offset=0&length=50" if uid else None,
                     "tmio_map_url": f"https://trackmania.io/api/map/{uid}" if uid else None,
                     "api_search": "https://trackmania.exchange/api/maps",
                     "api_replays": "https://trackmania.exchange/api/replays",
