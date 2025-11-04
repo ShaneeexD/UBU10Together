@@ -263,7 +263,7 @@ def fetch_tmio_author_time(uid: str, user_agent: str) -> Optional[int]:
     return None
 
 
-def compute_time_a(times_ms: List[int], c: float = 1.15, n: int = 20) -> Optional[float]:
+def compute_time_a(times_ms: List[int], c: float = 1.1, n: int = 50) -> Optional[float]:
     if len(times_ms) < n:
         return None
     top = times_ms[:n]
@@ -290,7 +290,7 @@ def compute_from_times(t_at: int, times: List[int]) -> Dict[str, Any]:
     records_count = len(times)
     t_wr = times[0] if records_count > 0 else t_at
     time_b = compute_time_b(int(t_at or 0), int(t_wr or 0), 0.5)
-    time_a_val = compute_time_a(times, 1.15, 50) if records_count >= 50 else None
+    time_a_val = compute_time_a(times, 1.1, 50) if records_count >= 50 else None
     if time_a_val is None:
         medal = time_b
         method = "Time_B"
@@ -350,7 +350,7 @@ def compute_for_map(m: Dict[str, Any], replays: List[Dict[str, Any]]) -> Dict[st
             t_wr = t_at
         time_b = compute_time_b(t_at, t_wr, 0.5)
         if records_count >= 50:
-            time_a_val = compute_time_a(times, 1.15, 50)
+            time_a_val = compute_time_a(times, 1.1, 50)
         else:
             time_a_val = None
         if time_a_val is None:
