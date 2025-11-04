@@ -5,13 +5,35 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import requests
+import time
 
 
 def http_get(url: str, params: Dict[str, Any], user_agent: str) -> Dict[str, Any]:
     headers = {"User-Agent": user_agent}
-    r = requests.get(url, params=params, headers=headers, timeout=30)
-    r.raise_for_status()
-    return r.json()
+    last_exc: Optional[Exception] = None
+    for attempt in range(4):
+        try:
+            r = requests.get(url, params=params, headers=headers, timeout=30)
+            if r.status_code == 429:
+                retry_after = r.headers.get("Retry-After")
+                # Respect server-provided backoff if available
+                if retry_after is not None:
+                    try:
+                        time.sleep(min(10.0, float(retry_after)))
+                    except Exception:
+                        time.sleep(1.0)
+                raise requests.HTTPError("429")
+            if 500 <= r.status_code < 600:
+                raise requests.HTTPError(f"{r.status_code}")
+            r.raise_for_status()
+            return r.json()
+        except Exception as e:
+            last_exc = e
+            if attempt == 3:
+                raise
+            delay = min(5.0, 0.5 * (2 ** attempt))
+            time.sleep(delay)
+    raise last_exc if last_exc else RuntimeError("http_get failed")
 
 
 def fetch_maps(author: str, prefix: str, user_agent: str, count: int = 100) -> List[Dict[str, Any]]:
@@ -198,29 +220,47 @@ def fetch_replays_fallback_get(track_id: int, user_agent: str, amount: int = 25)
 
 
 def fetch_tmio_leaderboard(uid: str, user_agent: str, length: int = 20) -> List[Dict[str, Any]]:
-    """Fetch top N records from trackmania.io leaderboard for a map UID."""
+    """Fetch top N records from trackmania.io leaderboard for a map UID, with retries if empty."""
     url = f"https://trackmania.io/api/leaderboard/map/{uid}"
     params = {"offset": "0", "length": str(max(1, min(length, 200)))}
-    try:
-        data = http_get(url, params, user_agent)
-    except Exception:
-        return []
-    tops = data.get("tops") if isinstance(data, dict) else []
-    return tops if isinstance(tops, list) else []
+    for attempt in range(4):
+        try:
+            data = http_get(url, params, user_agent)
+        except Exception:
+            if attempt == 3:
+                return []
+            time.sleep(min(2.0, 0.5 * (2 ** attempt)))
+            continue
+        tops = data.get("tops") if isinstance(data, dict) else []
+        if isinstance(tops, list) and len(tops) > 0:
+            return tops
+        # Empty payload; back off and retry
+        if attempt < 3:
+            time.sleep(min(2.0, 0.5 * (2 ** attempt)))
+    return []
 
 
 def fetch_tmio_author_time(uid: str, user_agent: str) -> Optional[int]:
-    """Fetch author time (authorScore) in ms from trackmania.io for a map UID."""
+    """Fetch author time (authorScore) in ms from trackmania.io for a map UID, with retries if missing."""
     url = f"https://trackmania.io/api/map/{uid}"
-    try:
-        data = http_get(url, {}, user_agent)
-    except Exception:
-        return None
-    val = data.get("authorScore") if isinstance(data, dict) else None
-    try:
-        return int(val) if val is not None else None
-    except (TypeError, ValueError):
-        return None
+    for attempt in range(4):
+        try:
+            data = http_get(url, {}, user_agent)
+        except Exception:
+            if attempt == 3:
+                return None
+            time.sleep(min(2.0, 0.5 * (2 ** attempt)))
+            continue
+        val = data.get("authorScore") if isinstance(data, dict) else None
+        try:
+            if val is not None:
+                return int(val)
+        except (TypeError, ValueError):
+            return None
+        # Missing value; back off and retry
+        if attempt < 3:
+            time.sleep(min(2.0, 0.5 * (2 ** attempt)))
+    return None
 
 
 def compute_time_a(times_ms: List[int], c: float = 1.2, n: int = 20) -> Optional[float]:
@@ -377,6 +417,22 @@ def main(argv: List[str]) -> int:
             except (TypeError, ValueError):
                 continue
         comp = compute_from_times(int(t_at_tmio or 0), times)
+        if comp["recordsCount"] < 20 or comp["authorTime_ms"] == 0:
+            time.sleep(1.0)
+            t_at_tmio = fetch_tmio_author_time(uid, args.user_agent) or 0
+            tops = fetch_tmio_leaderboard(uid, args.user_agent, 20)
+            times = []
+            for e in tops:
+                t = e.get("time") if isinstance(e, dict) else None
+                if t is None:
+                    continue
+                try:
+                    times.append(int(t))
+                except (TypeError, ValueError):
+                    continue
+            comp2 = compute_from_times(int(t_at_tmio or 0), times)
+            if (comp2["recordsCount"] > comp["recordsCount"]) or (comp["authorTime_ms"] == 0 and comp2["authorTime_ms"] > 0):
+                comp = comp2
 
         track_id_val = m.get("MapId") or m.get("TrackID") or m.get("TrackId")
         try:
@@ -407,6 +463,7 @@ def main(argv: List[str]) -> int:
             },
         }
         out["maps"].append(entry)
+        time.sleep(0.15)
 
     if args.out == "-":
         json.dump(out, sys.stdout, ensure_ascii=False, indent=2)
