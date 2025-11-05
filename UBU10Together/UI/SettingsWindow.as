@@ -29,15 +29,15 @@ class SettingsWindow {
             UI::Text("\\$fffTarget Medal:");
             UI::BeginGroup();
             
-            if (MedalButton(3, "⭕", "Author", controller.selectedMedal == 3)) {
+            if (MedalButton(3, "", "Author", controller.selectedMedal == 3)) {
                 controller.selectedMedal = 3;
             }
             UI::SameLine();
-            if (MedalButton(4, "⭐", "Harder", controller.selectedMedal == 4)) {
+            if (MedalButton(4, "", "Harder", controller.selectedMedal == 4)) {
                 controller.selectedMedal = 4;
             }
             UI::SameLine();
-            if (MedalButton(5, "🌟", "Hardest", controller.selectedMedal == 5)) {
+            if (MedalButton(5, "", "Hardest", controller.selectedMedal == 5)) {
                 controller.selectedMedal = 5;
             }
             
@@ -78,7 +78,7 @@ class SettingsWindow {
                 UI::BeginDisabled();
             }
             
-            if (UI::Button("\\$0f0 ▶ START SESSION", vec2(460, 40))) {
+            if (UI::Button("\\$0f0 ▶️ START SESSION", vec2(460, 40))) {
                 StartSession();
             }
             
@@ -89,7 +89,7 @@ class SettingsWindow {
             // Stop button (if running)
             if (controller.isRunning) {
                 UI::Dummy(vec2(0, 5));
-                if (UI::Button("\\$f00 ⏹ STOP SESSION", vec2(460, 30))) {
+                if (UI::Button("\\$f00 ⏹️ STOP SESSION", vec2(460, 30))) {
                     controller.StopRun(false);
                     isOpen = false;
                 }

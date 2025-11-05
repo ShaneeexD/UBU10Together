@@ -35,6 +35,8 @@ api.md
 firebase_commands.txt
 firebase_setup.md
 upload_to_firebase.py
+BUILD_INSTRUCTIONS.md
+README.md
 
 # Plugin build artifacts
 /UBU10Together/.build/
