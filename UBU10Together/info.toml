@@ -1,0 +1,9 @@
+[meta]
+name     = "UBU10 Together"
+author   = "ShaneeexD"
+category = "Multiplayer"
+version  = "1.0.0"
+siteid   = 0
+
+[script]
+dependencies = [ "MLFeedRaceData" ]

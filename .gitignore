@@ -32,4 +32,11 @@ api.md
 # Other
 /ExampleChampMedalPlugin
 /ExampleTogetherPlugin
+firebase_commands.txt
+firebase_setup.md
+upload_to_firebase.py
+
+# Plugin build artifacts
+/UBU10Together/.build/
+/UBU10Together/*.op
 
