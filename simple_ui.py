@@ -67,6 +67,7 @@ def compute_and_render(author: str, prefix: str, ua: str, text_widget: Text, cal
                 "computed": {
                     "timeA_ms": comp["timeA_ms"],
                     "timeB_ms": comp["timeB_ms"],
+                    "harderTime_ms": comp["harderTime_ms"],
                     "medalTime_ms": comp["medalTime_ms"],
                     "method": comp["method"],
                 },

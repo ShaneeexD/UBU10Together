@@ -283,6 +283,18 @@ def compute_time_b(t_at: int, t_wr: int, f: float = 0.5) -> float:
     return t_at - f * diff
 
 
+def compute_harder_time(t_at: int, t_wr: int, factor: Optional[float] = 0.25) -> int:
+    """1/4 of the way from AuthorTime toward WR by default. Always at least 1 ms faster than AT."""
+    if t_at is None or t_wr is None:
+        return int(t_at or 0)
+    f = 0.25 if factor is None else factor
+    try:
+        offs = int((int(t_at) - int(t_wr)) * f)
+    except Exception:
+        offs = 0
+    return int(t_at) - max(offs, 1)
+
+
 def compute_from_times(t_at: int, times: List[int]) -> Dict[str, Any]:
     """Compute Time_A/Time_B/Medal from author time and a list of top times (ms)."""
     times = [int(t) for t in times if isinstance(t, (int, float))]
@@ -291,6 +303,7 @@ def compute_from_times(t_at: int, times: List[int]) -> Dict[str, Any]:
     t_wr = times[0] if records_count > 0 else t_at
     time_b = compute_time_b(int(t_at or 0), int(t_wr or 0), 0.5)
     time_a_val = compute_time_a(times, 1.1, 50) if records_count >= 50 else None
+    harder = compute_harder_time(int(t_at or 0), int(t_wr or 0), 0.125)
     if time_a_val is None:
         medal = time_b
         method = "Time_B"
@@ -303,6 +316,7 @@ def compute_from_times(t_at: int, times: List[int]) -> Dict[str, Any]:
         "recordsCount": records_count,
         "timeA_ms": int(round(time_a_val)) if time_a_val is not None else None,
         "timeB_ms": int(round(time_b)),
+        "harderTime_ms": int(harder),
         "medalTime_ms": int(round(medal)),
         "method": method,
     }
@@ -353,6 +367,7 @@ def compute_for_map(m: Dict[str, Any], replays: List[Dict[str, Any]]) -> Dict[st
             time_a_val = compute_time_a(times, 1.1, 50)
         else:
             time_a_val = None
+        harder = compute_harder_time(int(t_at), int(t_wr), 0.125)
         if time_a_val is None:
             medal = time_b
             method = "Time_B"
@@ -365,6 +380,7 @@ def compute_for_map(m: Dict[str, Any], replays: List[Dict[str, Any]]) -> Dict[st
             "recordsCount": records_count,
             "timeA_ms": int(round(time_a_val)) if time_a_val is not None else None,
             "timeB_ms": int(round(time_b)),
+            "harderTime_ms": int(harder),
             "medalTime_ms": int(round(medal)),
             "method": method,
         }
@@ -451,6 +467,7 @@ def main(argv: List[str]) -> int:
             "computed": {
                 "timeA_ms": comp["timeA_ms"],
                 "timeB_ms": comp["timeB_ms"],
+                "harderTime_ms": comp["harderTime_ms"],
                 "medalTime_ms": comp["medalTime_ms"],
                 "method": comp["method"],
             },
