@@ -78,7 +78,7 @@ class SettingsWindow {
                 UI::BeginDisabled();
             }
             
-            if (UI::Button("\\$0f0 ▶️ START SESSION", vec2(460, 40))) {
+            if (UI::Button("\\$0f0 START SESSION", vec2(460, 40))) {
                 StartSession();
             }
             
@@ -89,7 +89,7 @@ class SettingsWindow {
             // Stop button (if running)
             if (controller.isRunning) {
                 UI::Dummy(vec2(0, 5));
-                if (UI::Button("\\$f00 ⏹️ STOP SESSION", vec2(460, 30))) {
+                if (UI::Button("\\$f00 STOP SESSION", vec2(460, 30))) {
                     controller.StopRun(false);
                     isOpen = false;
                 }

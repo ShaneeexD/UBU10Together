@@ -4,6 +4,9 @@ class MapController {
     array<MX::MapInfo@> mapList;
     array<string> playedMapUids;
     
+    // Temp storage for async map loading
+    MX::MapInfo@ pendingMap;
+    
     MapController() {
         // Constructor
     }
@@ -114,36 +117,71 @@ class MapController {
         return selected;
     }
     
-    // Load map to room
+    // Load map to room using BetterRoomManager
     void LoadMapToRoom(MX::MapInfo@ mapInfo) {
         if (mapInfo is null) {
             warn("[MapController] ⚠ Cannot load null map");
             return;
         }
         
-        trace("[MapController] 📥 Loading map: " + mapInfo.Name);
+        trace("[MapController] 📥 Loading map: " + mapInfo.Name + " (" + mapInfo.MapUid + ")");
+        
+        @pendingMap = mapInfo;
+        startnew(CoroutineFunc(LoadMapAsyncWrapper));
+    }
+    
+    void LoadMapAsync() {
+        MX::MapInfo@ mapInfo = pendingMap;
+        if (mapInfo is null) return;
         
         try {
-            // Try to load map by UID via PlaygroundClientScriptAPI
+            // Get current server info
             auto app = cast<CTrackMania>(GetApp());
             if (app is null) {
                 warn("[MapController] ⚠ Cannot get app");
                 return;
             }
             
-            // TODO: Implement proper map loading via room/playlist
-            // For now, this requires manual map loading or room integration
-            trace("[MapController] 📍 Map selected: " + mapInfo.MapUid);
-            trace("[MapController] ⚠ Automatic map loading not yet implemented");
+            // Get club and room IDs from BetterRoomManager
+            BRM::ServerInfo@ serverInfo = BRM::GetCurrentServerInfo(app, true);
             
-            // Note: Map loading typically requires:
-            // - Room server integration
-            // - Playlist management
-            // - Or manual /add command
+            if (serverInfo is null || serverInfo.clubId == 0 || serverInfo.roomId == 0) {
+                warn("[MapController] ⚠ Not in a valid club room - cannot auto-load maps");
+                warn("[MapController] ℹ️ You need to manually load UBU10 maps or join a room");
+                return;
+            }
+            
+            uint clubId = serverInfo.clubId;
+            uint roomId = serverInfo.roomId;
+            
+            trace("[MapController] 🎯 Loading to club=" + clubId + " room=" + roomId);
+            
+            // Check if already on this map
+            string currentUid = GetCurrentMapUid();
+            if (currentUid == mapInfo.MapUid) {
+                trace("[MapController] ✅ Already on target map");
+                return;
+            }
+            
+            // Use BetterRoomManager to switch to the map
+            // This will load the map by UID in the room
+            sleep(1000);  // Small delay for stability
+            BRM::CreateRoomBuilder(clubId, roomId).GoToNextMapAndThenSetTimeLimit(mapInfo.MapUid, -1, 1);
+            
+            trace("[MapController] ✅ Map load command sent via BRM");
             
         } catch {
             warn("[MapController] ❌ Load exception: " + getExceptionInfo());
         }
+    }
+    
+    // Helper to get current map UID
+    string GetCurrentMapUid() {
+        auto app = cast<CTrackMania>(GetApp());
+        if (app is null || app.RootMap is null || app.RootMap.MapInfo is null) {
+            return "";
+        }
+        return app.RootMap.MapInfo.MapUid;
     }
     
     // Get map count
@@ -160,5 +198,12 @@ class MapController {
     void ResetPlayed() {
         playedMapUids.RemoveRange(0, playedMapUids.Length);
         trace("[MapController] 🔄 Played list reset");
+    }
+}
+
+// Global wrapper function for coroutine
+void LoadMapAsyncWrapper() {
+    if (g_controller !is null && g_controller.mapController !is null) {
+        g_controller.mapController.LoadMapAsync();
     }
 }
