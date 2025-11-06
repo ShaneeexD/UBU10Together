@@ -101,11 +101,14 @@ class PlayerTracker {
         // Clear sorted entries
         sortedEntries.RemoveRange(0, sortedEntries.Length);
         
-        // Get all player data
-        auto keys = playerTimes.GetKeys();
-        for (uint i = 0; i < keys.Length; i++) {
+        // Track which players we've already added from playerTimes
+        dictionary addedPlayers;
+        
+        // First, add all players who have driven times on this map
+        auto timeKeys = playerTimes.GetKeys();
+        for (uint i = 0; i < timeKeys.Length; i++) {
             PlayerData@ data;
-            playerTimes.Get(keys[i], @data);
+            playerTimes.Get(timeKeys[i], @data);
             
             // Get medal count for this player
             uint medalCount = 0;
@@ -117,9 +120,31 @@ class PlayerTracker {
             
             PlayerEntry@ entry = PlayerEntry(data.name, data.time, data.medal, medalCount);
             sortedEntries.InsertLast(entry);
+            addedPlayers.Set(data.login, true);
         }
         
-        // Sort by time (ascending)
+        // Then, add players who have medal counts but no time on current map
+        auto medalKeys = playerMedalCounts.GetKeys();
+        for (uint i = 0; i < medalKeys.Length; i++) {
+            string login = medalKeys[i];
+            
+            // Skip if already added
+            if (addedPlayers.Exists(login)) continue;
+            
+            // Get player name from login (use login as fallback)
+            string playerName = login;
+            
+            // Get medal count
+            int64 count;
+            playerMedalCounts.Get(login, count);
+            uint medalCount = uint(count);
+            
+            // Create entry with no time (-1 will display as "--:--.---")
+            PlayerEntry@ entry = PlayerEntry(playerName, -1, 0, medalCount);
+            sortedEntries.InsertLast(entry);
+        }
+        
+        // Sort by time (ascending, players without times go to bottom)
         sortedEntries.SortAsc();
         
         // Update game window
@@ -158,6 +183,10 @@ class PlayerTracker {
         }
         count++;
         playerMedalCounts.Set(playerLogin, count);
+        
+        // Update leaderboard immediately to show new medal count
+        UpdateLeaderboard();
+        trace("[PlayerTracker] 🏅 Medal awarded to " + playerLogin + " (total: " + count + ")");
     }
     
     void ResetForNewMap() {

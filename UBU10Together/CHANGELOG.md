@@ -37,6 +37,17 @@
   - Medal count persists across maps during a session
   - Resets when the session is stopped or plugin is reloaded
 
+### Fixed (Latest)
+- **Instant Medal Display**: Medal counts now update in leaderboard immediately when awarded
+  - Added `UpdateLeaderboard()` call in `IncrementPlayerMedalCount()`
+  - No need to wait for next map or drive a new time to see medal count update
+  
+- **Persistent Leaderboard**: Players remain visible in leaderboard even without current map time
+  - Modified `UpdateLeaderboard()` to show all players with medal counts
+  - Players without times on current map display as "--:--.---"
+  - Players with times appear first (sorted by time), then players without times
+  - Fixed `PlayerEntry.opCmp()` to sort players without times to bottom
+
 ### Added
 - **Skip Map Feature**: Added ability to skip the current map during a session
   - New "⏭ Skip Map" button in GameWindow above "Stop Session"

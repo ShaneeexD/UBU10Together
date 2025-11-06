@@ -96,7 +96,7 @@ class GameWindow {
             UI::PushStyleColor(UI::Col::ButtonActive, canSkip ? colActive : colDisabled);
             
             if (!canSkip) UI::BeginDisabled();
-            if (UI::Button("⏭ Skip Map", vec2(360, 30))) {
+            if (UI::Button("Skip Map", vec2(360, 30))) {
                 SkipButtonGuard::StampNow();
                 startnew(SkipHandler::SkipCurrentMap);
             }
@@ -251,6 +251,12 @@ class PlayerEntry {
     
     // Sort comparison operator
     int opCmp(const PlayerEntry@ other) const {
+        // Players without times (-1) always go to bottom
+        if (time < 0 && other.time >= 0) return 1;
+        if (time >= 0 && other.time < 0) return -1;
+        if (time < 0 && other.time < 0) return 0; // Both no time, equal
+        
+        // Normal time comparison
         if (time < other.time) return -1;
         if (time > other.time) return 1;
         return 0;
