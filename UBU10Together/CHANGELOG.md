@@ -38,6 +38,12 @@
   - Resets when the session is stopped or plugin is reloaded
 
 ### Fixed (Latest)
+- **Player Names Between Maps**: Fixed player names showing as login IDs when no time on current map
+  - Added `playerNames` dictionary to persistently track login -> display name mapping
+  - Names are stored whenever player data is processed from MLFeed
+  - Players without current map times now show proper display names instead of login IDs
+  - Names persist across map changes throughout the session
+
 - **Instant Medal Display**: Medal counts now update in leaderboard immediately when awarded
   - Added `UpdateLeaderboard()` call in `IncrementPlayerMedalCount()`
   - No need to wait for next map or drive a new time to see medal count update

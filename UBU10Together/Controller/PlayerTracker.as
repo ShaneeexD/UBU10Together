@@ -6,7 +6,8 @@ class PlayerTracker {
     GameWindow@ gameWindow;
     
     dictionary playerTimes;  // playerName -> PlayerData
-    dictionary playerMedalCounts;  // playerName -> medal count for session
+    dictionary playerMedalCounts;  // playerLogin -> medal count for session
+    dictionary playerNames;  // playerLogin -> display name
     array<PlayerEntry@> sortedEntries;
     
     int lastUpdateTime = 0;
@@ -53,6 +54,9 @@ class PlayerTracker {
         
         string login = player.Login;
         string name = player.Name;
+        
+        // Store player name for this login (for persistent leaderboard display)
+        playerNames.Set(login, name);
         
         // Get best time
         int bestTime = player.BestTime;
@@ -131,8 +135,11 @@ class PlayerTracker {
             // Skip if already added
             if (addedPlayers.Exists(login)) continue;
             
-            // Get player name from login (use login as fallback)
+            // Get player name from stored names (use login as fallback)
             string playerName = login;
+            if (playerNames.Exists(login)) {
+                playerNames.Get(login, playerName);
+            }
             
             // Get medal count
             int64 count;
@@ -207,6 +214,7 @@ class PlayerTracker {
         // Full reset including medal counts (for session end)
         playerTimes.DeleteAll();
         playerMedalCounts.DeleteAll();
+        playerNames.DeleteAll();
         sortedEntries.RemoveRange(0, sortedEntries.Length);
         
         // Clear saved data
