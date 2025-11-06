@@ -19,6 +19,7 @@ class UBU10Controller {
     int runTimeRemainingMs = -1;
     int runStartTime = -1;
     int runTimeTotalMs = -1;
+    int pausedRemainingMs = -1;  // Store remaining time when paused for map change
 
     // Current map
     MX::MapInfo@ currentMapInfo;
@@ -117,6 +118,13 @@ class UBU10Controller {
         runTimeRemainingMs = runTimeTotalMs;
         runStartTime = Time::Now;
 
+        // Set server time limit via BRM
+        if (runTimeMinutes > 0) {
+            int timeLimitSeconds = int(runTimeMinutes) * 60;
+            SetServerTimeLimit(timeLimitSeconds);
+            trace("[UBU10] ⏱ Server time limit set to " + timeLimitSeconds + " seconds");
+        }
+
         // Start medal controller
         medalController.Reset();
         medalController.StartWatching();
@@ -163,13 +171,51 @@ class UBU10Controller {
     void PauseRun() {
         trace("[UBU10] ⏸ Pausing run");
         isPaused = true;
+        
+        // Store current remaining time before pausing
+        if (runStartTime > 0 && runTimeTotalMs > 0) {
+            int elapsed = Time::Now - runStartTime;
+            runTimeRemainingMs = Math::Max(0, runTimeRemainingMs - elapsed);
+            pausedRemainingMs = runTimeRemainingMs;  // Store for later resume
+            trace("[UBU10] 💾 Stored remaining time: " + (pausedRemainingMs / 1000) + "s");
+        }
+        
         runStartTime = -1;
     }
 
     void ResumeRun() {
         trace("[UBU10] ▶ Resuming run");
         isPaused = false;
+        
+        // Restore the exact remaining time from when we paused
+        if (pausedRemainingMs > 0) {
+            runTimeRemainingMs = pausedRemainingMs;
+            trace("[UBU10] ➡ Restored remaining time: " + (runTimeRemainingMs / 1000) + "s");
+        }
+        
         runStartTime = Time::Now;
+        
+        // Note: Server time limit is already set by LoadMapAsync
+    }
+    
+    void SetServerTimeLimit(int timeLimitSeconds) {
+        // Set the server time limit via BetterRoomManager
+        try {
+            BRM::ServerInfo@ serverInfo = BRM::GetCurrentServerInfo(cast<CTrackMania>(GetApp()), true);
+            if (serverInfo is null || serverInfo.clubId == 0 || serverInfo.roomId == 0) {
+                warn("[UBU10] ⚠ Cannot set time limit - not in a valid club room");
+                return;
+            }
+            
+            auto builder = BRM::CreateRoomBuilder(serverInfo.clubId, serverInfo.roomId);
+            builder.LoadCurrentSettingsAsync()
+                   .SetTimeLimit(timeLimitSeconds)
+                   .SaveRoom();
+            
+            trace("[UBU10] ⏱ Server time limit updated: " + timeLimitSeconds + "s");
+        } catch {
+            warn("[UBU10] ❌ Failed to set time limit: " + getExceptionInfo());
+        }
     }
 
     // ===== Map Management =====
@@ -182,6 +228,12 @@ class UBU10Controller {
 
         try {
             medalController.Reset();
+            
+            // Reset player tracker for new map (preserves medal counts)
+            if (playerTracker !is null) {
+                playerTracker.ResetForNewMap();
+                trace("[UBU10] 🔄 Player tracker reset for new map (medals preserved)");
+            }
 
             // Get current UID to avoid repeats
             string curUid = "";
@@ -218,8 +270,14 @@ class UBU10Controller {
     }
 
     void LoadMapAsync() {
-        // Load map to room
-        mapController.LoadMapToRoom(currentMapInfo);
+        // Calculate remaining time in seconds to pass to map loader
+        int timeLimitSeconds = -1;
+        if (runTimeTotalMs > 0 && runTimeRemainingMs > 0) {
+            timeLimitSeconds = runTimeRemainingMs / 1000;
+        }
+        
+        // Load map to room with time limit
+        mapController.LoadMapToRoom(currentMapInfo, timeLimitSeconds);
 
         const string wantUid = currentMapInfo.MapUid;
         uint startTime = Time::Now;

@@ -120,7 +120,7 @@ class GameWindow {
             UI::Text("Pos"); UI::NextColumn();
             UI::Text("Player"); UI::NextColumn();
             UI::Text("Time"); UI::NextColumn();
-            UI::Text("Medal"); UI::NextColumn();
+            UI::Text("Medals"); UI::NextColumn();
             UI::Separator();
             
             // Entries
@@ -136,11 +136,10 @@ class GameWindow {
                 // Time
                 UI::Text(FormatTime(entry.time)); UI::NextColumn();
                 
-                // Medal indicator
-                string icon = GetMedalIcon(entry.medal);
+                // Medal count (like example plugin)
                 vec4 color = GetMedalColor(entry.medal);
                 UI::PushStyleColor(UI::Col::Text, color);
-                UI::Text(icon); UI::NextColumn();
+                UI::Text(tostring(entry.medalCount)); UI::NextColumn();
                 UI::PopStyleColor();
             }
             
@@ -190,11 +189,13 @@ class PlayerEntry {
     string name;
     int time;
     uint medal;
+    uint medalCount = 0;  // Total medals achieved in this session
     
-    PlayerEntry(const string &in n, int t, uint m) {
+    PlayerEntry(const string &in n, int t, uint m, uint mc = 0) {
         name = n;
         time = t;
         medal = m;
+        medalCount = mc;
     }
     
     // Sort comparison operator

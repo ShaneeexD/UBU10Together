@@ -6,6 +6,7 @@ class PlayerTracker {
     GameWindow@ gameWindow;
     
     dictionary playerTimes;  // playerName -> PlayerData
+    dictionary playerMedalCounts;  // playerName -> medal count for session
     array<PlayerEntry@> sortedEntries;
     
     int lastUpdateTime = 0;
@@ -106,7 +107,15 @@ class PlayerTracker {
             PlayerData@ data;
             playerTimes.Get(keys[i], @data);
             
-            PlayerEntry@ entry = PlayerEntry(data.name, data.time, data.medal);
+            // Get medal count for this player
+            uint medalCount = 0;
+            if (playerMedalCounts.Exists(data.login)) {
+                int64 count;
+                playerMedalCounts.Get(data.login, count);
+                medalCount = uint(count);
+            }
+            
+            PlayerEntry@ entry = PlayerEntry(data.name, data.time, data.medal, medalCount);
             sortedEntries.InsertLast(entry);
         }
         
@@ -141,7 +150,18 @@ class PlayerTracker {
         Json::ToFile(path, arr);
     }
     
-    void Reset() {
+    void IncrementPlayerMedalCount(const string &in playerLogin) {
+        // Increment the medal count for this player in the session
+        int64 count = 0;
+        if (playerMedalCounts.Exists(playerLogin)) {
+            playerMedalCounts.Get(playerLogin, count);
+        }
+        count++;
+        playerMedalCounts.Set(playerLogin, count);
+    }
+    
+    void ResetForNewMap() {
+        // Clear times for new map but KEEP medal counts for the session
         playerTimes.DeleteAll();
         sortedEntries.RemoveRange(0, sortedEntries.Length);
         
@@ -151,7 +171,22 @@ class PlayerTracker {
             IO::Delete(path);
         }
         
-        trace("[PlayerTracker] 🔄 Reset");
+        trace("[PlayerTracker] 🔄 Reset for new map (medal counts preserved)");
+    }
+    
+    void Reset() {
+        // Full reset including medal counts (for session end)
+        playerTimes.DeleteAll();
+        playerMedalCounts.DeleteAll();
+        sortedEntries.RemoveRange(0, sortedEntries.Length);
+        
+        // Clear saved data
+        string path = IO::FromStorageFolder("UBU10_PlayerInfo.json");
+        if (IO::FileExists(path)) {
+            IO::Delete(path);
+        }
+        
+        trace("[PlayerTracker] 🔄 Full reset");
     }
 }
 

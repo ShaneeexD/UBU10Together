@@ -6,6 +6,7 @@ class MapController {
     
     // Temp storage for async map loading
     MX::MapInfo@ pendingMap;
+    int pendingTimeLimit = -1;
     
     MapController() {
         // Constructor
@@ -13,7 +14,7 @@ class MapController {
     
     // Load map list from Firebase
     bool LoadMapList() {
-        trace("[MapController] 📥 Fetching UBU10 maps from Firebase");
+        trace("[MapController] 📥 Fetching School maps from Firebase (temporary test set)");
         
         try {
             // Fetch all medal data from Firebase
@@ -118,15 +119,19 @@ class MapController {
     }
     
     // Load map to room using BetterRoomManager
-    void LoadMapToRoom(MX::MapInfo@ mapInfo) {
+    void LoadMapToRoom(MX::MapInfo@ mapInfo, int timeLimitSeconds = -1) {
         if (mapInfo is null) {
             warn("[MapController] ⚠ Cannot load null map");
             return;
         }
         
         trace("[MapController] 📥 Loading map: " + mapInfo.Name + " (" + mapInfo.MapUid + ")");
+        if (timeLimitSeconds > 0) {
+            trace("[MapController] ⏱ Time limit: " + timeLimitSeconds + "s");
+        }
         
         @pendingMap = mapInfo;
+        pendingTimeLimit = timeLimitSeconds;
         startnew(CoroutineFunc(LoadMapAsyncWrapper));
     }
     
@@ -166,7 +171,10 @@ class MapController {
             // Use BetterRoomManager to switch to the map
             // This will load the map by UID in the room
             sleep(1000);  // Small delay for stability
-            BRM::CreateRoomBuilder(clubId, roomId).GoToNextMapAndThenSetTimeLimit(mapInfo.MapUid, -1, 1);
+            
+            // Use pending time limit if set, otherwise no limit (-1)
+            int timeLimit = pendingTimeLimit > 0 ? pendingTimeLimit : -1;
+            BRM::CreateRoomBuilder(clubId, roomId).GoToNextMapAndThenSetTimeLimit(mapInfo.MapUid, timeLimit, 1);
             
             trace("[MapController] ✅ Map load command sent via BRM");
             

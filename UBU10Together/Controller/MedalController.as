@@ -1,5 +1,8 @@
 // MedalController - Watches for players reaching target medals and triggers map changes
 
+// Cooldown to prevent false medal detections right after map change
+const int MAP_CHANGE_COOLDOWN_MS = 8000;
+
 class MedalController {
     UBU10Controller@ controller;
     bool isWatching = false;
@@ -8,6 +11,7 @@ class MedalController {
     bool isWaitingForSwitch = false;
     string currentMapUid = "";
     bool firstWinnerRecorded = false;
+    int lastMapChangeTime = 0;  // Time::Now when map last changed
     
     MedalController(UBU10Controller@ ctrl) {
         @controller = ctrl;
@@ -23,7 +27,15 @@ class MedalController {
     void Reset() {
         firstWinnerRecorded = false;
         isWaitingForSwitch = false;
-        trace("[MedalController] 🔄 Reset for new map");
+        lastMapChangeTime = Time::Now;  // Set cooldown timestamp
+        
+        // Clear player info file to prevent false medal detections
+        string playerInfoPath = IO::FromStorageFolder("UBU10_PlayerInfo.json");
+        if (IO::FileExists(playerInfoPath)) {
+            IO::Delete(playerInfoPath);
+        }
+        
+        trace("[MedalController] 🔄 Reset for new map (cooldown: " + MAP_CHANGE_COOLDOWN_MS + "ms)");
     }
     
     void WatchLoop() {
@@ -40,6 +52,13 @@ class MedalController {
                 currentMapUid = uidNow;
                 Reset();
                 trace("[MedalController] 🗺 Map changed: " + uidNow);
+            }
+            
+            // Cooldown: prevent false detections right after map change
+            // MLFeed writes player data asynchronously, which causes old map medals to appear on new map
+            int timeSinceMapChange = Time::Now - lastMapChangeTime;
+            if (timeSinceMapChange < MAP_CHANGE_COOLDOWN_MS) {
+                continue;  // Still in cooldown period
             }
             
             if (!isWaitingForSwitch && !firstWinnerRecorded) {
@@ -113,11 +132,19 @@ class MedalController {
         firstWinnerRecorded = true;
         
         string winnerName = GetFirstWinnerName();
+        string winnerLogin = GetFirstWinnerLogin();
         if (winnerName.Length == 0) {
             winnerName = "Unknown";
         }
         
+        // Increment win count in targets file
         IncrementWinCount(winnerName);
+        
+        // Increment session medal count in PlayerTracker
+        if (controller.playerTracker !is null && winnerLogin.Length > 0) {
+            controller.playerTracker.IncrementPlayerMedalCount(winnerLogin);
+        }
+        
         trace("[MedalController] 🏆 Winner credited: " + winnerName);
     }
     
@@ -146,6 +173,34 @@ class MedalController {
             }
         } catch {
             warn("[MedalController] ❌ Error getting winner: " + getExceptionInfo());
+        }
+        
+        return "";
+    }
+    
+    string GetFirstWinnerLogin() {
+        string path = IO::FromStorageFolder("UBU10_PlayerInfo.json");
+        if (!IO::FileExists(path)) return "";
+        
+        try {
+            Json::Value data = Json::FromFile(path);
+            if (data.GetType() != Json::Type::Array) return "";
+            
+            int targetMedal = int(controller.selectedMedal);
+            
+            // Find first player with target medal
+            for (uint i = 0; i < data.Length; i++) {
+                Json::Value player = data[i];
+                if (player.GetType() != Json::Type::Object) continue;
+                if (!player.HasKey("medal")) continue;
+                
+                int medal = int(player["medal"]);
+                if (medal >= targetMedal) {
+                    if (player.HasKey("login")) return string(player["login"]);
+                }
+            }
+        } catch {
+            warn("[MedalController] ❌ Error getting winner login: " + getExceptionInfo());
         }
         
         return "";
