@@ -1,5 +1,25 @@
 // GameWindow - Minimal in-game interface
 
+// Skip button cooldown guard
+namespace SkipButtonGuard {
+    uint lastSkipTime = 0;
+    const uint COOLDOWN_MS = 10000; // 10 seconds cooldown
+    
+    bool IsCooldownActive(int &out msLeft) {
+        if (lastSkipTime == 0) {
+            msLeft = 0;
+            return false;
+        }
+        int elapsed = int(Time::Now - lastSkipTime);
+        msLeft = Math::Max(0, int(COOLDOWN_MS) - elapsed);
+        return msLeft > 0;
+    }
+    
+    void StampNow() {
+        lastSkipTime = Time::Now;
+    }
+}
+
 class GameWindow {
     UBU10Controller@ controller;
     bool isVisible = false;  // Only show when running
@@ -42,7 +62,7 @@ class GameWindow {
             vec4 medalColor = GetMedalColor(controller.selectedMedal);
             
             UI::PushStyleColor(UI::Col::Text, medalColor);
-            UI::Text("  ⭐ " + medalName + " - " + timeStr);
+            UI::Text(medalName + " - " + timeStr);
             UI::PopStyleColor();
             
             UI::Separator();
@@ -60,6 +80,37 @@ class GameWindow {
             UI::Separator();
             
             // Controls
+            // Skip button with cooldown
+            int cdLeftMs = 0;
+            bool cooldown = SkipButtonGuard::IsCooldownActive(cdLeftMs);
+            bool canSkip = controller.isRunning && !controller.isPaused && !controller.isSwitchingMap && !cooldown;
+            
+            // Button colors
+            vec4 colEnabled = vec4(0.2f, 0.6f, 1.0f, 1.0f);   // Blue
+            vec4 colHovered = vec4(0.3f, 0.7f, 1.0f, 1.0f);   // Light blue
+            vec4 colActive = vec4(0.1f, 0.5f, 0.9f, 1.0f);    // Dark blue
+            vec4 colDisabled = vec4(0.3f, 0.3f, 0.3f, 0.5f);  // Gray
+            
+            UI::PushStyleColor(UI::Col::Button, canSkip ? colEnabled : colDisabled);
+            UI::PushStyleColor(UI::Col::ButtonHovered, canSkip ? colHovered : colDisabled);
+            UI::PushStyleColor(UI::Col::ButtonActive, canSkip ? colActive : colDisabled);
+            
+            if (!canSkip) UI::BeginDisabled();
+            if (UI::Button("⏭ Skip Map", vec2(360, 30))) {
+                SkipButtonGuard::StampNow();
+                startnew(SkipHandler::SkipCurrentMap);
+            }
+            if (!canSkip) UI::EndDisabled();
+            
+            // Show cooldown tooltip
+            if (UI::IsItemHovered() && cooldown) {
+                UI::BeginTooltip();
+                UI::Text("Cooldown: " + (cdLeftMs / 1000 + 1) + "s remaining");
+                UI::EndTooltip();
+            }
+            
+            UI::PopStyleColor(3);
+            
             if (UI::Button("⏹ Stop Session", vec2(360, 30))) {
                 controller.StopRun(false);
             }

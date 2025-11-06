@@ -19,12 +19,16 @@
   - Original `Reset()` method still clears everything when stopping the session
   - Medal counts now accumulate throughout the entire session
 
-- **Server Timer Drift**: Fixed timer increasing slightly on each map switch
-  - **Root cause**: Recalculating remaining time on each resume caused drift
-  - **Solution**: Store exact remaining time in `pausedRemainingMs` when pausing
-  - On resume, restore the exact stored value instead of recalculating
-  - Timer now maintains accurate countdown across map changes
-  - Added `pausedRemainingMs` variable to track time during map switches
+- **Server Timer Drift & Reset Bug**: Fixed timer resetting to full session time on map changes
+  - **Root cause 1**: `Update()` calculated `runTimeRemainingMs = runTimeTotalMs - elapsed` every frame
+  - **Root cause 2**: Since `runStartTime` was reset on resume, `elapsed` was tiny, making it look like full time remained
+  - **Root cause 3**: This caused plugin timer to reset to max while server timer was correct
+  - **Solution**: 
+    - Added `runStartRemainingMs` to store remaining time when timer starts/resumes
+    - Changed `Update()` to calculate `runTimeRemainingMs = runStartRemainingMs - elapsed`
+    - Now calculates from remaining time at resume, not total session time
+  - Timer now stays synchronized with server across map changes
+  - Plugin timer and server timer now match perfectly
 
 ### Changed
 - **Leaderboard Display**: Changed medal column from icons to medal counts
@@ -34,6 +38,16 @@
   - Resets when the session is stopped or plugin is reloaded
 
 ### Added
+- **Skip Map Feature**: Added ability to skip the current map during a session
+  - New "⏭ Skip Map" button in GameWindow above "Stop Session"
+  - 10-second cooldown between skips to prevent spam
+  - Visual feedback: button is blue when enabled, gray when disabled
+  - Tooltip shows remaining cooldown time when hovering
+  - Can only skip when session is running and not paused
+  - Preserves remaining session time and medal counts
+  - Implemented via `SkipHandler.as` and `SkipButtonGuard` namespace
+  - Added `SwitchToSpecificMap()` method to controller for direct map switching
+
 - **Session Medal Tracking**:
   - Added `playerMedalCounts` dictionary in `PlayerTracker` to track medals per player
   - Added `IncrementPlayerMedalCount()` method to increment a player's session medal count
@@ -65,11 +79,15 @@
 - `SwitchMap()` now calls `ResetForNewMap()` instead of `Reset()`
 - Players remain in leaderboard across maps with their accumulated medal counts
 
-**Timer Drift Prevention:**
+**Timer Synchronization Fix:**
+- Added `runStartRemainingMs` variable to store remaining time when timer starts/resumes
 - Added `pausedRemainingMs` variable to store exact remaining time during pauses
-- `PauseRun()` calculates and stores remaining time before setting `runStartTime = -1`
-- `ResumeRun()` restores the exact stored value instead of recalculating
-- This prevents cumulative drift from repeated pause/resume cycles
+- `PauseRun()` calculates and stores remaining time: `pausedRemainingMs = runTimeRemainingMs`
+- `ResumeRun()` restores both: `runTimeRemainingMs = pausedRemainingMs` AND `runStartRemainingMs = pausedRemainingMs`
+- `Update()` now calculates: `runTimeRemainingMs = runStartRemainingMs - elapsed`
+  - OLD (broken): `runTimeRemainingMs = runTimeTotalMs - elapsed` (always reset to max)
+  - NEW (fixed): Calculates from remaining time at resume, not total time
+- This prevents timer from resetting to full session time on map changes
 - Server time limit is set once per map load with the stored remaining time
 
 **Server Timer Integration:**

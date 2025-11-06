@@ -20,6 +20,7 @@ class UBU10Controller {
     int runStartTime = -1;
     int runTimeTotalMs = -1;
     int pausedRemainingMs = -1;  // Store remaining time when paused for map change
+    int runStartRemainingMs = -1;  // Store remaining time when timer was started/resumed
 
     // Current map
     MX::MapInfo@ currentMapInfo;
@@ -104,19 +105,17 @@ class UBU10Controller {
             warn("[UBU10] ❌ Failed to load map list");
             return;
         }
-
-        trace("[UBU10] ✅ Map list loaded - " + mapController.GetMapCount() + " maps available");
-
-        // Set up run state
+        
         isRunning = true;
         isPaused = false;
-        isSwitchingMap = false;
-        hasShownEndWindow = false;
-        isFirstMap = true;
-
-        runTimeTotalMs = (runTimeMinutes == 0) ? -1 : int(runTimeMinutes) * 60 * 1000;
-        runTimeRemainingMs = runTimeTotalMs;
         runStartTime = Time::Now;
+        
+        // Set up timing
+        if (runTimeMinutes > 0) {
+            runTimeTotalMs = runTimeMinutes * 60 * 1000;
+            runTimeRemainingMs = runTimeTotalMs;
+            runStartRemainingMs = runTimeTotalMs;  // Store what we're starting with
+        }
 
         // Set server time limit via BRM
         if (runTimeMinutes > 0) {
@@ -190,6 +189,7 @@ class UBU10Controller {
         // Restore the exact remaining time from when we paused
         if (pausedRemainingMs > 0) {
             runTimeRemainingMs = pausedRemainingMs;
+            runStartRemainingMs = pausedRemainingMs;  // Store for Update calculation
             trace("[UBU10] ➡ Restored remaining time: " + (runTimeRemainingMs / 1000) + "s");
         }
         
@@ -310,15 +310,55 @@ class UBU10Controller {
             ResumeRun();
         }
     }
+    
+    void SwitchToSpecificMap(MX::MapInfo@ mapInfo) {
+        if (isSwitchingMap) return;
+        if (mapInfo is null) {
+            warn("[UBU10] ❌ Cannot switch to null map");
+            return;
+        }
+        
+        trace("[UBU10] 🎯 Switching to specific map: " + mapInfo.Name);
+        isSwitchingMap = true;
+        
+        try {
+            medalController.Reset();
+            
+            // Reset player tracker for new map (preserves medal counts)
+            if (playerTracker !is null) {
+                playerTracker.ResetForNewMap();
+                trace("[UBU10] 🔄 Player tracker reset for new map (medals preserved)");
+            }
+            
+            // Set the specific map
+            @currentMapInfo = mapInfo;
+            
+            trace("[UBU10] ✅ Selected map: " + currentMapInfo.Name + " (" + currentMapInfo.MapUid + ")");
+            
+            // Load medal data from Firebase
+            @currentMedalData = FirebaseClient::GetMedalData(currentMapInfo.MapUid);
+            
+            if (currentMedalData is null) {
+                warn("[UBU10] ⚠ No medal data for map - using defaults");
+                @currentMedalData = MedalData();  // Use defaults
+            }
+            
+            // Load the map
+            LoadMapAsync();
+        } catch {
+            warn("[UBU10] ❌ Map switch failed: " + getExceptionInfo());
+            isSwitchingMap = false;
+        }
+    }
 
     // ===== Update Loop =====
     void Update(float dt) {
         if (!isRunning || isPaused || isSwitchingMap) return;
 
         // Update remaining time
-        if (runTimeTotalMs > 0 && runStartTime > 0) {
+        if (runTimeTotalMs > 0 && runStartTime > 0 && runStartRemainingMs > 0) {
             int elapsed = Time::Now - runStartTime;
-            runTimeRemainingMs = runTimeTotalMs - elapsed;
+            runTimeRemainingMs = runStartRemainingMs - elapsed;
 
             // Check if time expired
             if (runTimeRemainingMs <= 0 && !hasShownEndWindow) {
