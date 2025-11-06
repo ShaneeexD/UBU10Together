@@ -79,46 +79,15 @@ class EndWindow {
     }
     
     void LoadWinnerData() {
-        // Load winner from targets.json
-        try {
-            string path = IO::FromStorageFolder("UBU10_targets.json");
-            if (!IO::FileExists(path)) {
-                winnerName = "No data";
-                winnerCount = 0;
-                return;
-            }
-            
-            Json::Value data = Json::FromFile(path);
-            if (data.GetType() != Json::Type::Object) {
-                winnerName = "Invalid data";
-                winnerCount = 0;
-                return;
-            }
-            
-            // Find player with most wins
-            auto keys = data.GetKeys();
-            int maxWins = 0;
-            string topPlayer = "";
-            
-            for (uint i = 0; i < keys.Length; i++) {
-                string player = keys[i];
-                int wins = int(data[player]);
-                if (wins > maxWins) {
-                    maxWins = wins;
-                    topPlayer = player;
-                }
-            }
-            
-            winnerName = topPlayer;
-            winnerCount = maxWins;
-            
-            trace("[EndWindow] Winner: " + winnerName + " with " + winnerCount + " wins");
-            
-        } catch {
-            warn("[EndWindow] Failed to load winner: " + getExceptionInfo());
-            winnerName = "Error loading data";
+        // Get winner from PlayerTracker
+        if (controller is null || controller.playerTracker is null) {
+            winnerName = "No data";
             winnerCount = 0;
+            return;
         }
+        
+        controller.playerTracker.GetWinner(winnerName, winnerCount);
+        trace("[EndWindow] Winner: " + winnerName + " with " + winnerCount + " medals");
     }
     
     string FormatDuration(uint minutes) {

@@ -225,6 +225,35 @@ class PlayerTracker {
         
         trace("[PlayerTracker] 🔄 Full reset");
     }
+    
+    // Get player with most medals for end screen
+    void GetWinner(string &out name, int &out count) {
+        name = "";
+        count = 0;
+        
+        auto keys = playerMedalCounts.GetKeys();
+        for (uint i = 0; i < keys.Length; i++) {
+            string login = keys[i];
+            int64 medalCount;
+            playerMedalCounts.Get(login, medalCount);
+            
+            if (int(medalCount) > count) {
+                count = int(medalCount);
+                
+                // Get display name from playerNames
+                if (playerNames.Exists(login)) {
+                    playerNames.Get(login, name);
+                } else {
+                    name = login;  // Fallback to login
+                }
+            }
+        }
+        
+        if (name.Length == 0) {
+            name = "No data";
+            count = 0;
+        }
+    }
 }
 
 // Player data class

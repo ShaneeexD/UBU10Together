@@ -38,6 +38,13 @@
   - Resets when the session is stopped or plugin is reloaded
 
 ### Fixed (Latest)
+- **Session Complete Screen**: Fixed winner display showing "No data"
+  - Added `GetWinner()` method to `PlayerTracker` to find player with most medals
+  - Changed `EndWindow` to get winner data from `PlayerTracker` instead of non-existent JSON file
+  - Fixed timing issue: EndWindow now opens BEFORE `StopRun()` clears medal data
+  - Winner name and medal count now display correctly at session end
+  - Shows proper display name (not login ID) and accurate medal count
+
 - **Player Names Between Maps**: Fixed player names showing as login IDs when no time on current map
   - Added `playerNames` dictionary to persistently track login -> display name mapping
   - Names are stored whenever player data is processed from MLFeed

@@ -362,11 +362,12 @@ class UBU10Controller {
 
             // Check if time expired
             if (runTimeRemainingMs <= 0 && !hasShownEndWindow) {
-                StopRun(true);
+                // Open end window BEFORE stopping (so it can read winner data before reset)
                 if (endWindow !is null) {
                     endWindow.Open();
                     hasShownEndWindow = true;
                 }
+                StopRun(true);
             }
         }
         
