@@ -38,6 +38,12 @@
   - Resets when the session is stopped or plugin is reloaded
 
 ### Fixed (Latest)
+- **Timer Double-Subtraction**: Fixed random time loss during map switches
+  - Root cause: `PauseRun()` was recalculating elapsed time even though `Update()` already keeps `runTimeRemainingMs` accurate
+  - This caused elapsed time to be subtracted TWICE, randomly losing minutes
+  - Fixed by using current `runTimeRemainingMs` value directly in `PauseRun()`
+  - Timer now stays accurate across all map switches (skip, medal trigger, etc.)
+
 - **Session Complete Screen**: Fixed winner display showing "No data"
   - Added `GetWinner()` method to `PlayerTracker` to find player with most medals
   - Changed `EndWindow` to get winner data from `PlayerTracker` instead of non-existent JSON file

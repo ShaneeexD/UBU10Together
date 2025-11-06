@@ -171,11 +171,10 @@ class UBU10Controller {
         trace("[UBU10] ⏸ Pausing run");
         isPaused = true;
         
-        // Store current remaining time before pausing
-        if (runStartTime > 0 && runTimeTotalMs > 0) {
-            int elapsed = Time::Now - runStartTime;
-            runTimeRemainingMs = Math::Max(0, runTimeRemainingMs - elapsed);
-            pausedRemainingMs = runTimeRemainingMs;  // Store for later resume
+        // Store current remaining time (already calculated by Update())
+        // Don't recalculate elapsed time here - Update() already keeps runTimeRemainingMs accurate
+        if (runTimeRemainingMs > 0) {
+            pausedRemainingMs = runTimeRemainingMs;
             trace("[UBU10] 💾 Stored remaining time: " + (pausedRemainingMs / 1000) + "s");
         }
         
