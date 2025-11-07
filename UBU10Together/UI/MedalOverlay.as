@@ -78,10 +78,10 @@ class MedalOverlay {
                         int delta = playerPB - medalData.hardestTime;
                         if (delta > 0) {
                             // PB is slower - show time needed to improve (red +)
-                            timeText += " \\$f77+" + Time::Format(delta);
+                            timeText += "  \\$f77+" + Time::Format(delta);
                         } else {
                             // PB is faster - show time beaten by (blue -)
-                            timeText += " \\$77f-" + Time::Format(-delta);
+                            timeText += "  \\$77f-" + Time::Format(-delta);
                         }
                     }
                     UI::Text(timeText);
