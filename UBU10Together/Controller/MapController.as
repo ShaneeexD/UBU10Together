@@ -14,7 +14,7 @@ class MapController {
     
     // Load map list from Firebase
     bool LoadMapList() {
-        trace("[MapController] 📥 Fetching School maps from Firebase (temporary test set)");
+        trace("[MapController] 📥 Fetching UBU10 maps from Firebase");
         
         try {
             // Fetch all medal data from Firebase
