@@ -52,7 +52,7 @@ UBU10Together is an OpenPlanet plugin for Trackmania that enables synchronized m
 
 2. **Open Settings**
    - Click `Plugins` → `UBU10 Together`
-   - Or press `F3` (default hotkey)
+   - Or press `F1` (default hotkey)
 
 3. **Configure Session**
    - **Target Medal**: Choose Author, Harder, or Hardest
