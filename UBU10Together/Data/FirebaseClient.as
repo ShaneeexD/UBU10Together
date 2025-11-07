@@ -1,8 +1,8 @@
 // FirebaseClient - Handles fetching medal data from Firebase
 
 namespace FirebaseClient {
-    // Firebase configuration - Temporarily using School maps (approved) instead of UBU10 (needs trusted dev status)
-    string FIREBASE_BASE_URL = "https://ubu10together-default-rtdb.europe-west1.firebasedatabase.app/school/";
+    // Firebase configuration
+    string FIREBASE_BASE_URL = "https://ubu10together-default-rtdb.europe-west1.firebasedatabase.app/ubu10/";
     string FIREBASE_AUTH_TOKEN = "";  // Optional: Add if using authentication
     
     // Cache for medal data

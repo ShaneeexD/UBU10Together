@@ -157,7 +157,7 @@ class MedalOverlay {
         
         // Start async Firebase request
         trace("[MedalOverlay] Starting async fetch for: " + currentMapUid);
-        string url = "https://ubu10together-default-rtdb.europe-west1.firebasedatabase.app/school/" + currentMapUid + ".json";
+        string url = "https://ubu10together-default-rtdb.europe-west1.firebasedatabase.app/ubu10/" + currentMapUid + ".json";
         @pendingRequest = Net::HttpGet(url);
     }
     
