@@ -10,8 +10,6 @@ class UBU10Controller {
     bool isFirstMap = true;
 
     // Settings
-    string clubId = "";
-    string roomId = "";
     uint runTimeMinutes = 120;  // Default 120 minutes
     uint selectedMedal = 3;     // 0=Bronze, 1=Silver, 2=Gold, 3=Author, 4=Harder, 5=Hardest
 
@@ -56,12 +54,9 @@ class UBU10Controller {
             string path = IO::FromStorageFolder("UBU10_settings.json");
             if (IO::FileExists(path)) {
                 Json::Value s = Json::FromFile(path);
-                if (s.HasKey("clubId")) clubId = string(s["clubId"]);
-                if (s.HasKey("roomId")) roomId = string(s["roomId"]);
                 if (s.HasKey("runTimeMinutes")) runTimeMinutes = uint(int(s["runTimeMinutes"]));
                 if (s.HasKey("selectedMedal")) selectedMedal = uint(int(s["selectedMedal"]));
-                trace("[UBU10] ⚙ Settings loaded | club=" + clubId + " room=" + roomId + 
-                      " time=" + runTimeMinutes + "min medal=" + selectedMedal);
+                trace("[UBU10] ⚙ Settings loaded | time=" + runTimeMinutes + "min medal=" + selectedMedal);
             }
         } catch {
             warn("[UBU10] ❌ Failed to load settings: " + getExceptionInfo());
@@ -71,8 +66,6 @@ class UBU10Controller {
     void SaveSettings() {
         try {
             Json::Value s = Json::Object();
-            s["clubId"] = clubId;
-            s["roomId"] = roomId;
             s["runTimeMinutes"] = runTimeMinutes;
             s["selectedMedal"] = selectedMedal;
             string path = IO::FromStorageFolder("UBU10_settings.json");

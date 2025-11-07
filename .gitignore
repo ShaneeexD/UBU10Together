@@ -38,6 +38,7 @@ upload_to_firebase.py
 upload_school_maps.py
 BUILD_INSTRUCTIONS.md
 README.md
+CHANGELOG.md
 
 # Plugin build artifacts
 /UBU10Together/.build/

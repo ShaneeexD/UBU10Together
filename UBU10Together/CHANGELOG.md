@@ -37,6 +37,13 @@
   - Medal count persists across maps during a session
   - Resets when the session is stopped or plugin is reloaded
 
+### Changed (Latest)
+- **Simplified Settings**: Removed unused Club ID and Room ID input fields
+  - Plugin auto-detects current club room via `BRM::GetCurrentServerInfo()`
+  - No manual room configuration needed - just join a club room and hit start!
+  - Cleaner settings window with only necessary options (medal target and duration)
+  - Settings file now only stores `runTimeMinutes` and `selectedMedal`
+
 ### Fixed (Latest)
 - **Timer Double-Subtraction**: Fixed random time loss during map switches
   - Root cause: `PauseRun()` was recalculating elapsed time even though `Update()` already keeps `runTimeRemainingMs` accurate

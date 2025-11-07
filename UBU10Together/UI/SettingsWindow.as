@@ -4,20 +4,14 @@ class SettingsWindow {
     bool isOpen = true;  // Start visible so user can configure
     UBU10Controller@ controller;
     
-    // Temp input buffers
-    string clubIdInput = "";
-    string roomIdInput = "";
-    
     SettingsWindow(UBU10Controller@ ctrl) {
         @controller = ctrl;
-        clubIdInput = controller.clubId;
-        roomIdInput = controller.roomId;
     }
     
     void Render() {
         if (!isOpen) return;
         
-        UI::SetNextWindowSize(500, 450, UI::Cond::FirstUseEver);
+        UI::SetNextWindowSize(500, 320, UI::Cond::FirstUseEver);
         if (UI::Begin("UBU10 Together - Settings", isOpen)) {
             // Title
             UI::PushFont(g_fontHeader);
@@ -51,23 +45,6 @@ class SettingsWindow {
             minutes = UI::SliderInt("Minutes", minutes, 5, 240);
             controller.runTimeMinutes = uint(minutes);
             UI::Text("Duration: " + FormatDuration(minutes));
-            UI::Separator();
-            
-            // Club/Room IDs
-            UI::Text("\\$fffClub & Room Configuration:");
-            UI::SetNextItemWidth(300);
-            clubIdInput = UI::InputText("Club ID", clubIdInput);
-            UI::SetNextItemWidth(300);
-            roomIdInput = UI::InputText("Room ID", roomIdInput);
-            
-            if (UI::Button("Check Room")) {
-                CheckRoom();
-            }
-            UI::SameLine();
-            if (UI::Button("Auto-Detect")) {
-                AutoDetectRoom();
-            }
-            
             UI::Separator();
             
             // Start button
@@ -136,9 +113,7 @@ class SettingsWindow {
     }
     
     void StartSession() {
-        // Save inputs
-        controller.clubId = clubIdInput;
-        controller.roomId = roomIdInput;
+        // Save settings
         controller.SaveSettings();
         
         // Start the run
@@ -146,29 +121,6 @@ class SettingsWindow {
         
         // Close settings window
         isOpen = false;
-    }
-    
-    void CheckRoom() {
-        // TODO: Implement room checking via API
-        trace("[Settings] Check room: club=" + clubIdInput + " room=" + roomIdInput);
-    }
-    
-    void AutoDetectRoom() {
-        // Try to detect from current server
-        auto app = cast<CTrackMania>(GetApp());
-        if (app is null || app.Network is null) {
-            trace("[Settings] ⚠ Cannot detect - not in a server");
-            return;
-        }
-        
-        auto network = cast<CTrackManiaNetwork>(app.Network);
-        if (network is null || network.ClientManiaAppPlayground is null) {
-            trace("[Settings] ⚠ Cannot detect - playground not available");
-            return;
-        }
-        
-        // TODO: Extract club/room from server info if available
-        trace("[Settings] Auto-detect attempted");
     }
 }
 
