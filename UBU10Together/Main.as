@@ -8,6 +8,7 @@ UBU10Controller@ g_controller = null;
 SettingsWindow@ g_settingsWindow = null;
 GameWindow@ g_gameWindow = null;
 EndWindow@ g_endWindow = null;
+MedalOverlay@ g_medalOverlay = null;
 
 // Global player tracker
 PlayerTracker@ g_playerTracker = null;
@@ -22,6 +23,7 @@ void Main() {
     @g_settingsWindow = SettingsWindow(g_controller);
     @g_gameWindow = GameWindow(g_controller);
     @g_endWindow = EndWindow(g_controller);
+    @g_medalOverlay = MedalOverlay();
     
     // Initialize player tracker
     @g_playerTracker = PlayerTracker(g_controller, g_gameWindow);
@@ -63,6 +65,10 @@ void Render() {
     
     if (g_endWindow !is null) {
         g_endWindow.Render();
+    }
+    
+    if (g_medalOverlay !is null) {
+        g_medalOverlay.Render();
     }
 }
 

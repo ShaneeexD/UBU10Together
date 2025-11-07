@@ -121,9 +121,12 @@ class UBU10Controller {
         medalController.Reset();
         medalController.StartWatching();
 
-        // Show game window
+        // Show game window and medal overlay
         if (g_gameWindow !is null) {
             g_gameWindow.isVisible = true;
+        }
+        if (g_medalOverlay !is null) {
+            g_medalOverlay.Show();
         }
 
         // Load first map
@@ -149,9 +152,12 @@ class UBU10Controller {
             playerTracker.Reset();
         }
         
-        // Hide game window
+        // Hide game window and medal overlay
         if (g_gameWindow !is null) {
             g_gameWindow.isVisible = false;
+        }
+        if (g_medalOverlay !is null) {
+            g_medalOverlay.Hide();
         }
 
         // Clean up
