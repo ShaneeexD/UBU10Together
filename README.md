@@ -113,7 +113,7 @@ The overlay updates automatically as you improve your times!
 
 ## ⌨️ Hotkey Controls
 
-**Default: F3** (change in OpenPlanet Settings → UBU10Together)
+**Default: F1** (change in OpenPlanet Settings → UBU10Together)
 
 - **Outside Session**: Toggles Settings Window
 - **During Session**: Toggles Game Window
