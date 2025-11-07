@@ -175,6 +175,7 @@ You can also toggle windows via the Plugins menu at any time.
 - OpenPlanet community
 - uncleblowtorch (map creator)
 - godis3mpty for plugin inspiration (u10stogether creator)
+- NaNInf for referencing custom medals
 - MLFeed & BetterRoomManager developers
 
 ---
