@@ -24,7 +24,7 @@ UBU10Together is an OpenPlanet plugin for Trackmania that enables synchronized m
 - **No Setup Required**: Just install and play - overlay appears automatically
 
 ### Quality of Life
-- **Hotkey Toggle**: Press `F3` to toggle UI windows (customizable in settings)
+- **Hotkey Toggle**: Press `F1` to toggle UI windows (customizable in settings)
 - **Plugins Menu Integration**: Easy access via the in-game Plugins menu
 - **Skip Cooldown**: 10-second cooldown between skip requests to prevent spam
 - **Session End Screen**: Summary of achievements when time runs out
@@ -52,7 +52,7 @@ UBU10Together is an OpenPlanet plugin for Trackmania that enables synchronized m
 
 2. **Open Settings**
    - Click `Plugins` → `UBU10 Together`
-   - Or press `F3` (default hotkey)
+   - Or press `F1` (default hotkey)
 
 3. **Configure Session**
    - **Target Medal**: Choose Author, Harder, or Hardest
@@ -67,7 +67,7 @@ UBU10Together is an OpenPlanet plugin for Trackmania that enables synchronized m
    - Maps auto-load when anyone achieves the target medal
    - Click `Skip Map` to move to next map manually (10s cooldown)
    - Track player progress in the game window
-   - Press `F3` to show/hide game window
+   - Press `F1` to show/hide game window
 
 6. **End Session**
    - Session ends automatically when timer reaches 0
@@ -88,7 +88,7 @@ UBU10Together is an OpenPlanet plugin for Trackmania that enables synchronized m
    - Work towards beating the medals
 
 4. **Optional**
-   - Press `F3` to toggle the overlay if needed
+   - Press `F1` to toggle the overlay if needed
    - Access settings via `Plugins` menu
 
 ---
@@ -173,7 +173,8 @@ You can also toggle windows via the Plugins menu at any time.
 
 **Special Thanks**:
 - OpenPlanet community
-- UBU10 map creators
+- uncleblowtorch (map creator)
+- godis3mpty for plugin inspiration (u10stogether creator)
 - MLFeed & BetterRoomManager developers
 
 ---
