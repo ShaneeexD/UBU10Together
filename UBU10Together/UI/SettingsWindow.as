@@ -63,6 +63,10 @@ class SettingsWindow {
                 UI::EndDisabled();
             }
             
+            // Hotkey info
+            UI::Dummy(vec2(0, 5));
+            UI::TextDisabled("Press " + g_hotkeySettings + " to toggle UI");
+            
             // Stop button (if running)
             if (controller.isRunning) {
                 UI::Dummy(vec2(0, 5));

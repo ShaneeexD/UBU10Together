@@ -36,7 +36,7 @@ class GameWindow {
         
         // Position in top-right corner
         UI::SetNextWindowPos(int(Draw::GetWidth()) - 420, 20, UI::Cond::Always);
-        UI::SetNextWindowSize(400, 500, UI::Cond::FirstUseEver);
+        UI::SetNextWindowSize(380, 540, UI::Cond::FirstUseEver);
         
         int flags = UI::WindowFlags::NoCollapse | UI::WindowFlags::NoResize;
         if (UI::Begin("UBU10 Together - Game", isVisible, flags)) {
