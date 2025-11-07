@@ -43,4 +43,5 @@ CHANGELOG.md
 # Plugin build artifacts
 /UBU10Together/.build/
 /UBU10Together/*.op
+/Build
 
