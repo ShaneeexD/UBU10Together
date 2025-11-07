@@ -24,7 +24,7 @@ UBU10Together is an OpenPlanet plugin for Trackmania that enables synchronized m
 - **No Setup Required**: Just install and play - overlay appears automatically
 
 ### Quality of Life
-- **Hotkey Toggle**: Press `F3` to toggle UI windows (customizable in settings)
+- **Hotkey Toggle**: Press `F1` to toggle UI windows (customizable in settings)
 - **Plugins Menu Integration**: Easy access via the in-game Plugins menu
 - **Skip Cooldown**: 10-second cooldown between skip requests to prevent spam
 - **Session End Screen**: Summary of achievements when time runs out
