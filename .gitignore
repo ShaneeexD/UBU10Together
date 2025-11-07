@@ -30,14 +30,13 @@ api.md
 .cache/
 
 # Other
-/ExampleChampMedalPlugin
-/ExampleTogetherPlugin
+/Example2
+/Example1
 firebase_commands.txt
 firebase_setup.md
 upload_to_firebase.py
 upload_school_maps.py
 BUILD_INSTRUCTIONS.md
-README.md
 CHANGELOG.md
 
 # Plugin build artifacts
