@@ -99,10 +99,18 @@ void WatchHotkeyLoop() {
     }
 }
 
-// Toggle settings window visibility
+// Toggle appropriate window based on session state
 void ToggleSettingsWindow() {
-    if (g_settingsWindow !is null) {
-        g_settingsWindow.isOpen = !g_settingsWindow.isOpen;
+    // During active session: toggle game window
+    if (g_controller !is null && g_controller.isRunning && !g_controller.runFinished) {
+        if (g_gameWindow !is null) {
+            g_gameWindow.isVisible = !g_gameWindow.isVisible;
+        }
+    } else {
+        // No session or session finished: toggle settings window
+        if (g_settingsWindow !is null) {
+            g_settingsWindow.isOpen = !g_settingsWindow.isOpen;
+        }
     }
 }
 
