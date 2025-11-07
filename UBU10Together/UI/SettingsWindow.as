@@ -65,7 +65,7 @@ class SettingsWindow {
             
             // Hotkey info
             UI::Dummy(vec2(0, 5));
-            UI::TextDisabled("Press " + g_hotkeySettings + " to toggle UI");
+            UI::TextDisabled("Press " + g_hotkeySettings + " to toggle UI (Change key in Openplanet > Settings)");
             
             // Stop button (if running)
             if (controller.isRunning) {
