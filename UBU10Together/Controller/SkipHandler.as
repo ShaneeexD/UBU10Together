@@ -1,5 +1,4 @@
 // SkipHandler - Handles skipping the current map
-// Based on ExampleTogetherPlugin implementation
 
 namespace SkipHandler {
     
