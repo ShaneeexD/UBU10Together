@@ -27,7 +27,7 @@ shared class MapInfo {
             if (json.HasKey("trackId")) TrackID = int(json["trackId"]);
             else if (json.HasKey("TrackID")) TrackID = int(json["TrackID"]);
         } catch {
-            warn("[MapInfo] ❌ Error parsing MapInfo: " + getExceptionInfo());
+            warn("[MapInfo] Error parsing MapInfo: " + getExceptionInfo());
         }
     }
     

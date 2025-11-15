@@ -15,10 +15,10 @@ PlayerTracker@ g_playerTracker = null;
 
 // Hotkey settings
 [Setting category="General" name="Toggle Window Hotkey" description="Hotkey to toggle the settings window (F1-F12)"]
-string g_hotkeySettings = "F3";
+string g_hotkeySettings = "F1";
 
 void Main() {
-    trace("[UBU10Together] 🎮 Plugin initializing...");
+    trace("[UBU10Together] Plugin initializing...");
     
     // Initialize controller
     @g_controller = UBU10Controller();
@@ -39,19 +39,19 @@ void Main() {
     // Start hotkey watcher
     startnew(WatchHotkeyLoop);
     
-    trace("[UBU10Together] ✅ Plugin initialized successfully");
+    trace("[UBU10Together] Plugin initialized successfully");
 }
 
 void OnDestroyed() {
-    trace("[UBU10Together] 🛑 Plugin shutting down");
+    trace("[UBU10Together] Plugin shutting down");
 }
 
 void OnDisabled() {
-    trace("[UBU10Together] ⏸ Plugin disabled");
+    trace("[UBU10Together] Plugin disabled");
 }
 
 void OnEnabled() {
-    trace("[UBU10Together] ▶ Plugin enabled");
+    trace("[UBU10Together] Plugin enabled");
 }
 
 // Main render loop - called every frame

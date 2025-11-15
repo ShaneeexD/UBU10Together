@@ -14,14 +14,14 @@ class MapController {
     
     // Load map list from Firebase
     bool LoadMapList() {
-        trace("[MapController] 📥 Fetching UBU10 maps from Firebase");
+        //trace("[MapController] Fetching UBU10 maps from Firebase");
         
         try {
             // Fetch all medal data from Firebase
             dictionary@ allData = FirebaseClient::GetAllMedalData();
             
             if (allData is null) {
-                warn("[MapController] ❌ Failed to fetch map data from Firebase");
+                warn("[MapController] Failed to fetch map data from Firebase");
                 return false;
             }
             
@@ -40,15 +40,15 @@ class MapController {
             }
             
             if (mapList.Length == 0) {
-                warn("[MapController] ❌ No valid maps found in Firebase");
+                warn("[MapController] No valid maps found in Firebase");
                 return false;
             }
             
-            trace("[MapController] ✅ Loaded " + mapList.Length + " maps from Firebase");
+            //trace("[MapController] Loaded " + mapList.Length + " maps from Firebase");
             return true;
             
         } catch {
-            warn("[MapController] ❌ Failed to load maps: " + getExceptionInfo());
+            warn("[MapController] Failed to load maps: " + getExceptionInfo());
             return false;
         }
     }
@@ -56,13 +56,13 @@ class MapController {
     // Get next map (randomized, avoiding current and played)
     MX::MapInfo@ GetNextMap(const string &in currentUid = "") {
         if (mapList.Length == 0) {
-            warn("[MapController] ⚠ No maps available");
+            warn("[MapController] No maps available");
             return null;
         }
         
         // If all maps have been played, reset the played list
         if (playedMapUids.Length >= mapList.Length) {
-            trace("[MapController] 🔄 All maps played - resetting rotation");
+            //trace("[MapController] All maps played - resetting rotation");
             playedMapUids.RemoveRange(0, playedMapUids.Length);
         }
         
@@ -90,7 +90,7 @@ class MapController {
         
         // If no available maps, force reset and try again
         if (availableMaps.Length == 0) {
-            trace("[MapController] 🔄 Forcing rotation reset");
+            //trace("[MapController] Forcing rotation reset");
             playedMapUids.RemoveRange(0, playedMapUids.Length);
             
             for (uint i = 0; i < mapList.Length; i++) {
@@ -101,7 +101,7 @@ class MapController {
         }
         
         if (availableMaps.Length == 0) {
-            warn("[MapController] ❌ Still no available maps");
+            warn("[MapController] Still no available maps");
             return null;
         }
         
@@ -112,8 +112,8 @@ class MapController {
         // Mark as played
         playedMapUids.InsertLast(selected.MapUid);
         
-        trace("[MapController] 🎲 Selected random map: " + selected.Name + " (" + 
-              availableMaps.Length + " available, " + playedMapUids.Length + " played)");
+        //trace("[MapController] Selected random map: " + selected.Name + " (" + 
+              //availableMaps.Length + " available, " + playedMapUids.Length + " played)");
         
         return selected;
     }
@@ -121,14 +121,14 @@ class MapController {
     // Load map to room using BetterRoomManager
     void LoadMapToRoom(MX::MapInfo@ mapInfo, int timeLimitSeconds = -1) {
         if (mapInfo is null) {
-            warn("[MapController] ⚠ Cannot load null map");
+            warn("[MapController] Cannot load null map");
             return;
         }
         
-        trace("[MapController] 📥 Loading map: " + mapInfo.Name + " (" + mapInfo.MapUid + ")");
-        if (timeLimitSeconds > 0) {
-            trace("[MapController] ⏱ Time limit: " + timeLimitSeconds + "s");
-        }
+        //trace("[MapController] Loading map: " + mapInfo.Name + " (" + mapInfo.MapUid + ")");
+        /*if (timeLimitSeconds > 0) {
+            trace("[MapController] Time limit: " + timeLimitSeconds + "s");
+        }*/
         
         @pendingMap = mapInfo;
         pendingTimeLimit = timeLimitSeconds;
@@ -143,7 +143,7 @@ class MapController {
             // Get current server info
             auto app = cast<CTrackMania>(GetApp());
             if (app is null) {
-                warn("[MapController] ⚠ Cannot get app");
+                warn("[MapController] Cannot get app");
                 return;
             }
             
@@ -151,20 +151,20 @@ class MapController {
             BRM::ServerInfo@ serverInfo = BRM::GetCurrentServerInfo(app, true);
             
             if (serverInfo is null || serverInfo.clubId == 0 || serverInfo.roomId == 0) {
-                warn("[MapController] ⚠ Not in a valid club room - cannot auto-load maps");
-                warn("[MapController] ℹ️ You need to manually load UBU10 maps or join a room");
+                warn("[MapController] Not in a valid club room - cannot auto-load maps");
+                warn("[MapController] You need to manually load UBU10 maps or join a room");
                 return;
             }
             
             uint clubId = serverInfo.clubId;
             uint roomId = serverInfo.roomId;
             
-            trace("[MapController] 🎯 Loading to club=" + clubId + " room=" + roomId);
+            //trace("[MapController] Loading to club=" + clubId + " room=" + roomId);
             
             // Check if already on this map
             string currentUid = GetCurrentMapUid();
             if (currentUid == mapInfo.MapUid) {
-                trace("[MapController] ✅ Already on target map");
+                //trace("[MapController] Already on target map");
                 return;
             }
             
@@ -176,10 +176,10 @@ class MapController {
             int timeLimit = pendingTimeLimit > 0 ? pendingTimeLimit : -1;
             BRM::CreateRoomBuilder(clubId, roomId).GoToNextMapAndThenSetTimeLimit(mapInfo.MapUid, timeLimit, 1);
             
-            trace("[MapController] ✅ Map load command sent via BRM");
+            //trace("[MapController] Map load command sent via BRM");
             
         } catch {
-            warn("[MapController] ❌ Load exception: " + getExceptionInfo());
+            warn("[MapController] Load exception: " + getExceptionInfo());
         }
     }
     
@@ -205,7 +205,7 @@ class MapController {
     // Reset played list
     void ResetPlayed() {
         playedMapUids.RemoveRange(0, playedMapUids.Length);
-        trace("[MapController] 🔄 Played list reset");
+        //trace("[MapController] Played list reset");
     }
 }
 

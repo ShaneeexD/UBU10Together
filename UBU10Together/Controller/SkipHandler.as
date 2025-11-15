@@ -1,21 +1,20 @@
 // SkipHandler - Handles skipping the current map
-// Based on ExampleTogetherPlugin implementation
 
 namespace SkipHandler {
     
     void SkipCurrentMap() {
         if (g_controller is null) {
-            warn("[SkipHandler] ❌ Controller is null");
+            warn("[SkipHandler] Controller is null");
             return;
         }
         
         // Check if run is active
         if (!g_controller.isRunning || g_controller.isPaused) {
-            warn("[SkipHandler] ❌ Cannot skip - run not active");
+            warn("[SkipHandler] Cannot skip - run not active");
             return;
         }
         
-        trace("[SkipHandler] 🔄 Skip map requested");
+        //trace("[SkipHandler] Skip map requested");
         
         // Get current map UID
         string currentUid = "";
@@ -35,12 +34,12 @@ namespace SkipHandler {
             return;
         }
         
-        trace("[SkipHandler] 🎯 Next map: " + nextMap.Name + " (" + nextMap.MapUid + ")");
+        //trace("[SkipHandler] Next map: " + nextMap.Name + " (" + nextMap.MapUid + ")");
         
         // Pause and switch to specific map
         g_controller.PauseRun();
         g_controller.SwitchToSpecificMap(nextMap);
         
-        trace("[SkipHandler] ✅ Map skip initiated");
+        //trace("[SkipHandler] Map skip initiated");
     }
 }

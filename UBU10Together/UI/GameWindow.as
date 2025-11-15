@@ -59,7 +59,7 @@ class GameWindow {
             string medalName = controller.GetMedalName(controller.selectedMedal);
             int targetTime = controller.GetMedalTime(controller.selectedMedal);
             string timeStr = controller.FormatTime(targetTime);
-            vec4 medalColor = GetMedalColor(controller.selectedMedal);
+            vec4 medalColor = controller.GetMedalColor(controller.selectedMedal);
             
             UI::PushStyleColor(UI::Col::Text, medalColor);
             UI::Text(medalName + " - " + timeStr);
@@ -185,10 +185,10 @@ class GameWindow {
                 UI::Text(entry.name); UI::NextColumn();
                 
                 // Time
-                UI::Text(FormatTime(entry.time)); UI::NextColumn();
+                UI::Text(controller.FormatTime(entry.time)); UI::NextColumn();
                 
-                // Medal count (like example plugin)
-                vec4 color = GetMedalColor(entry.medal);
+                // Medal count
+                vec4 color = controller.GetMedalColor(entry.medal);
                 UI::PushStyleColor(UI::Col::Text, color);
                 UI::Text(tostring(entry.medalCount)); UI::NextColumn();
                 UI::PopStyleColor();
@@ -199,36 +199,7 @@ class GameWindow {
         
         UI::EndChild();
     }
-    
-    vec4 GetMedalColor(uint medalId) {
-        switch (medalId) {
-            case 0: return vec4(0.8, 0.5, 0.3, 1.0);   // Bronze
-            case 1: return vec4(0.75, 0.75, 0.75, 1.0); // Silver
-            case 2: return vec4(1.0, 0.84, 0.0, 1.0);  // Gold
-            case 3: return vec4(0.2, 1.0, 0.2, 1.0);   // Author (green)
-            case 4: return vec4(0.9, 0.5, 0.0, 1.0);   // Harder (orange)
-            case 5: return vec4(1.0, 0.2, 0.2, 1.0);   // Hardest (red)
-        }
-        return vec4(0.5, 0.5, 0.5, 1.0);
-    }
-    
-    string GetMedalIcon(uint medalId) {
-        if (medalId >= 3) return "⭐";
-        if (medalId == 2) return "⭕";
-        if (medalId == 1) return "◯";
-        return "○";
-    }
-    
-    string FormatTime(int ms) {
-        if (ms <= 0) return "--:--.---";
-        int totalSeconds = ms / 1000;
-        int minutes = totalSeconds / 60;
-        int seconds = totalSeconds % 60;
-        int millis = ms % 1000;
-        return tostring(minutes) + ":" + (seconds < 10 ? "0" : "") + tostring(seconds) + "." + 
-               (millis < 100 ? "0" : "") + (millis < 10 ? "0" : "") + tostring(millis);
-    }
-    
+
     // Called by PlayerTracker to update leaderboard
     void UpdateLeaderboard(array<PlayerEntry@>@ entries) {
         leaderboard = entries;

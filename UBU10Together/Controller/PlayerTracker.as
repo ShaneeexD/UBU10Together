@@ -161,7 +161,7 @@ class PlayerTracker {
     }
     
     void SavePlayerInfo() {
-        string path = IO::FromStorageFolder("UBU10_PlayerInfo.json");
+        string path = IO::FromStorageFolder(UBU10Files::PlayerInfo);
         
         Json::Value arr = Json::Array();
         
@@ -193,21 +193,21 @@ class PlayerTracker {
         
         // Update leaderboard immediately to show new medal count
         UpdateLeaderboard();
-        trace("[PlayerTracker] 🏅 Medal awarded to " + playerLogin + " (total: " + count + ")");
+        //trace("[PlayerTracker] Medal awarded to " + playerLogin + " (total: " + count + ")");
     }
     
     void ResetForNewMap() {
-        // Clear times for new map but KEEP medal counts for the session
+        // Clear times for new map but keep medal counts for the session
         playerTimes.DeleteAll();
         sortedEntries.RemoveRange(0, sortedEntries.Length);
         
         // Clear saved data
-        string path = IO::FromStorageFolder("UBU10_PlayerInfo.json");
+        string path = IO::FromStorageFolder(UBU10Files::PlayerInfo);
         if (IO::FileExists(path)) {
             IO::Delete(path);
         }
         
-        trace("[PlayerTracker] 🔄 Reset for new map (medal counts preserved)");
+        //trace("[PlayerTracker] Reset for new map (medal counts preserved)");
     }
     
     void Reset() {
@@ -218,12 +218,12 @@ class PlayerTracker {
         sortedEntries.RemoveRange(0, sortedEntries.Length);
         
         // Clear saved data
-        string path = IO::FromStorageFolder("UBU10_PlayerInfo.json");
+        string path = IO::FromStorageFolder(UBU10Files::PlayerInfo);
         if (IO::FileExists(path)) {
             IO::Delete(path);
         }
         
-        trace("[PlayerTracker] 🔄 Full reset");
+        //trace("[PlayerTracker] Full reset");
     }
     
     // Get player with most medals for end screen

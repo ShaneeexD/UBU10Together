@@ -23,7 +23,7 @@ class MedalData {
     string method = "";    // "Time_A" or "Time_B"
     
     MedalData() {
-        // Default constructor - all times set to -1 (unavailable)
+        // Default constructor
     }
     
     MedalData(Json::Value@ data) {
@@ -47,9 +47,9 @@ class MedalData {
                 if (computed.HasKey("method")) method = string(computed["method"]);
             }
             
-            trace("[MedalData] Loaded: " + mapName + " (AT=" + authorTime + " Harder=" + harderTime + " Hardest=" + hardestTime + ")");
+            //trace("[MedalData] Loaded: " + mapName + " (AT=" + authorTime + " Harder=" + harderTime + " Hardest=" + hardestTime + ")");
         } catch {
-            warn("[MedalData] ❌ Failed to parse medal data: " + getExceptionInfo());
+            warn("[MedalData] Failed to parse medal data: " + getExceptionInfo());
         }
     }
     

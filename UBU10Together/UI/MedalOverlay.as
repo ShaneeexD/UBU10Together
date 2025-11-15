@@ -41,7 +41,7 @@ class MedalOverlay {
             return;
         }
         
-        // Don't show if interface is hidden (optional)
+        // Don't show if interface is hidden
         if (!UI::IsGameUIVisible()) return;
         
         int window_flags = UI::WindowFlags::NoTitleBar |
@@ -148,16 +148,9 @@ class MedalOverlay {
         
         if (currentMapUid.Length == 0) return;
         
-        // Check cache first (non-blocking)
-        @currentMedalData = GetCachedMedalData(currentMapUid);
-        if (currentMedalData !is null) {
-            trace("[MedalOverlay] Cache hit for: " + currentMedalData.mapName);
-            return;
-        }
-        
         // Start async Firebase request
-        trace("[MedalOverlay] Starting async fetch for: " + currentMapUid);
-        string url = "https://ubu10together-default-rtdb.europe-west1.firebasedatabase.app/ubu10/" + currentMapUid + ".json";
+        //trace("[MedalOverlay] Starting async fetch for: " + currentMapUid);
+        string url = UBU10Files::FirebaseUrl + currentMapUid + ".json"; 
         @pendingRequest = Net::HttpGet(url);
     }
     
@@ -176,8 +169,7 @@ class MedalOverlay {
                     if (data !is null) {
                         @currentMedalData = MedalData(data);
                         if (currentMedalData !is null && currentMedalData.IsValid()) {
-                            trace("[MedalOverlay] Async loaded: " + currentMedalData.mapName);
-                            CacheMedalData(currentMapUid, currentMedalData);
+                            //trace("[MedalOverlay] Async loaded: " + currentMedalData.mapName);
                         } else {
                             trace("[MedalOverlay] Invalid medal data for: " + currentMapUid);
                         }
@@ -194,16 +186,6 @@ class MedalOverlay {
         
         // Clear pending request
         @pendingRequest = null;
-    }
-    
-    // Simple cache functions (avoid FirebaseClient to prevent suspension issues)
-    MedalData@ GetCachedMedalData(const string &in mapUid) {
-        // For now, no caching to keep it simple and avoid suspension issues
-        return null;
-    }
-    
-    void CacheMedalData(const string &in mapUid, MedalData@ data) {
-        // For now, no caching to keep it simple
     }
     
     int GetPlayerPersonalBest() {

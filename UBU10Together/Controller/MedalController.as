@@ -20,7 +20,7 @@ class MedalController {
     void StartWatching() {
         if (isWatching) return;
         isWatching = true;
-        trace("[MedalController] 👁 Started watching");
+        //trace("[MedalController] Started watching");
         startnew(CoroutineFunc(this.WatchLoop));
     }
     
@@ -30,12 +30,12 @@ class MedalController {
         lastMapChangeTime = Time::Now;  // Set cooldown timestamp
         
         // Clear player info file to prevent false medal detections
-        string playerInfoPath = IO::FromStorageFolder("UBU10_PlayerInfo.json");
+        string playerInfoPath = IO::FromStorageFolder(UBU10Files::PlayerInfo);
         if (IO::FileExists(playerInfoPath)) {
             IO::Delete(playerInfoPath);
         }
         
-        trace("[MedalController] 🔄 Reset for new map (cooldown: " + MAP_CHANGE_COOLDOWN_MS + "ms)");
+        //trace("[MedalController] Reset for new map (cooldown: " + MAP_CHANGE_COOLDOWN_MS + "ms)");
     }
     
     void WatchLoop() {
@@ -51,7 +51,7 @@ class MedalController {
             if (uidNow.Length > 0 && uidNow != currentMapUid) {
                 currentMapUid = uidNow;
                 Reset();
-                trace("[MedalController] 🗺 Map changed: " + uidNow);
+                //trace("[MedalController] Map changed: " + uidNow);
             }
             
             // Cooldown: prevent false detections right after map change
@@ -63,7 +63,7 @@ class MedalController {
             
             if (!isWaitingForSwitch && !firstWinnerRecorded) {
                 if (CheckIfTargetMedalReached()) {
-                    trace("[MedalController] 🏆 Target medal reached!");
+                    //trace("[MedalController] Target medal reached!");
                     isWaitingForSwitch = true;
                     
                     // Credit winner
@@ -89,19 +89,19 @@ class MedalController {
             
             string uidNow = GetCurrentMapUid();
             if (uidNow.Length > 0 && uidNow != fromUid) {
-                trace("[MedalController] ✅ Map change confirmed");
+                //trace("[MedalController] Map change confirmed");
                 isWaitingForSwitch = false;
                 return;
             }
         }
         
         // Timeout - re-enable watching
-        trace("[MedalController] ⏱ Map change timeout - re-enabling");
+        //trace("[MedalController] Map change timeout - re-enabling");
         isWaitingForSwitch = false;
     }
     
     bool CheckIfTargetMedalReached() {
-        string path = IO::FromStorageFolder("UBU10_PlayerInfo.json");
+        string path = IO::FromStorageFolder(UBU10Files::PlayerInfo);
         if (!IO::FileExists(path)) return false;
         
         try {
@@ -121,7 +121,7 @@ class MedalController {
                 }
             }
         } catch {
-            warn("[MedalController] ❌ Error checking medals: " + getExceptionInfo());
+            warn("[MedalController] Error checking medals: " + getExceptionInfo());
         }
         
         return false;
@@ -145,11 +145,11 @@ class MedalController {
             controller.playerTracker.IncrementPlayerMedalCount(winnerLogin);
         }
         
-        trace("[MedalController] 🏆 Winner credited: " + winnerName);
+        //trace("[MedalController] Winner credited: " + winnerName);
     }
     
     string GetFirstWinnerName() {
-        string path = IO::FromStorageFolder("UBU10_PlayerInfo.json");
+        string path = IO::FromStorageFolder(UBU10Files::PlayerInfo);
         if (!IO::FileExists(path)) return "";
         
         try {
@@ -172,14 +172,14 @@ class MedalController {
                 }
             }
         } catch {
-            warn("[MedalController] ❌ Error getting winner: " + getExceptionInfo());
+            warn("[MedalController] Error getting winner: " + getExceptionInfo());
         }
         
         return "";
     }
     
     string GetFirstWinnerLogin() {
-        string path = IO::FromStorageFolder("UBU10_PlayerInfo.json");
+        string path = IO::FromStorageFolder(UBU10Files::PlayerInfo);
         if (!IO::FileExists(path)) return "";
         
         try {
@@ -200,14 +200,14 @@ class MedalController {
                 }
             }
         } catch {
-            warn("[MedalController] ❌ Error getting winner login: " + getExceptionInfo());
+            warn("[MedalController] Error getting winner login: " + getExceptionInfo());
         }
         
         return "";
     }
     
     void IncrementWinCount(const string &in playerName) {
-        string path = IO::FromStorageFolder("UBU10_targets.json");
+        string path = IO::FromStorageFolder(UBU10Files::Targets);
         
         Json::Value data;
         if (IO::FileExists(path)) {

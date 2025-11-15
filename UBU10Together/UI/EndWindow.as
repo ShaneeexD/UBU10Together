@@ -69,7 +69,7 @@ class EndWindow {
             
             // Return button
             UI::SetCursorPos(vec2(UI::GetWindowSize().x / 2 - 100, UI::GetCursorPos().y));
-            if (UI::Button("🏠 Return to Menu", vec2(200, 40))) {
+            if (UI::Button("Return to Menu", vec2(200, 40))) {
                 isOpen = false;
                 controller.runFinished = false;
             }
@@ -87,7 +87,7 @@ class EndWindow {
         }
         
         controller.playerTracker.GetWinner(winnerName, winnerCount);
-        trace("[EndWindow] Winner: " + winnerName + " with " + winnerCount + " medals");
+        //trace("[EndWindow] Winner: " + winnerName + " with " + winnerCount + " medals");
     }
     
     string FormatDuration(uint minutes) {

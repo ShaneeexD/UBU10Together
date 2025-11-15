@@ -81,7 +81,7 @@ class SettingsWindow {
     }
     
     bool MedalButton(uint medalId, const string &in icon, const string &in label, bool selected) {
-        vec4 color = GetMedalColor(medalId);
+        vec4 color = controller.GetMedalColor(medalId);
         
         if (selected) {
             UI::PushStyleColor(UI::Col::Button, color);
@@ -97,16 +97,7 @@ class SettingsWindow {
         
         return clicked;
     }
-    
-    vec4 GetMedalColor(uint medalId) {
-        switch (medalId) {
-            case 3: return vec4(1.0, 0.84, 0.0, 1.0);  // Gold (Author)
-            case 4: return vec4(0.9, 0.5, 0.0, 1.0);   // Orange (Harder)
-            case 5: return vec4(1.0, 0.2, 0.2, 1.0);   // Red (Hardest)
-        }
-        return vec4(0.5, 0.5, 0.5, 1.0);
-    }
-    
+
     string FormatDuration(int minutes) {
         int hours = minutes / 60;
         int mins = minutes % 60;

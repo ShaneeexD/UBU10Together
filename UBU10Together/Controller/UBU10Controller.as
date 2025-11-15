@@ -51,15 +51,15 @@ class UBU10Controller {
     // ===== Settings Management =====
     void LoadSettings() {
         try {
-            string path = IO::FromStorageFolder("UBU10_settings.json");
+            string path = IO::FromStorageFolder(UBU10Files::Settings);
             if (IO::FileExists(path)) {
                 Json::Value s = Json::FromFile(path);
                 if (s.HasKey("runTimeMinutes")) runTimeMinutes = uint(int(s["runTimeMinutes"]));
                 if (s.HasKey("selectedMedal")) selectedMedal = uint(int(s["selectedMedal"]));
-                trace("[UBU10] ⚙ Settings loaded | time=" + runTimeMinutes + "min medal=" + selectedMedal);
+                //trace("[UBU10] Settings loaded | time=" + runTimeMinutes + "min medal=" + selectedMedal);
             }
         } catch {
-            warn("[UBU10] ❌ Failed to load settings: " + getExceptionInfo());
+            warn("[UBU10] Failed to load settings: " + getExceptionInfo());
         }
     }
 
@@ -68,23 +68,23 @@ class UBU10Controller {
             Json::Value s = Json::Object();
             s["runTimeMinutes"] = runTimeMinutes;
             s["selectedMedal"] = selectedMedal;
-            string path = IO::FromStorageFolder("UBU10_settings.json");
+            string path = IO::FromStorageFolder(UBU10Files::Settings);
             Json::ToFile(path, s);
-            trace("[UBU10] 💾 Settings saved");
+            //trace("[UBU10] Settings saved");
         } catch {
-            warn("[UBU10] ❌ Failed to save settings: " + getExceptionInfo());
+            warn("[UBU10] Failed to save settings: " + getExceptionInfo());
         }
     }
 
     // ===== Run Control =====
     void StartRun() {
-        trace("[UBU10] ▶ Starting run");
+        //trace("[UBU10] Starting run");
         startnew(CoroutineFunc(this.PerformStartup));
     }
 
     void PerformStartup() {
         if (runFinished) {
-            trace("[UBU10] 🚫 Cannot start - already finished");
+            trace("[UBU10] Cannot start - already finished");
             return;
         }
 
@@ -93,9 +93,9 @@ class UBU10Controller {
         LoadSettings();
 
         // Initialize map list
-        trace("[UBU10] 📥 Loading UBU10 map list");
+        //trace("[UBU10] Loading UBU10 map list");
         if (!mapController.LoadMapList()) {
-            warn("[UBU10] ❌ Failed to load map list");
+            warn("[UBU10] Failed to load map list");
             return;
         }
         
@@ -114,7 +114,7 @@ class UBU10Controller {
         if (runTimeMinutes > 0) {
             int timeLimitSeconds = int(runTimeMinutes) * 60;
             SetServerTimeLimit(timeLimitSeconds);
-            trace("[UBU10] ⏱ Server time limit set to " + timeLimitSeconds + " seconds");
+            //trace("[UBU10] Server time limit set to " + timeLimitSeconds + " seconds");
         }
 
         // Start medal controller
@@ -134,7 +134,7 @@ class UBU10Controller {
     }
 
     void StopRun(bool isTimeExpired = false) {
-        trace("[UBU10] 🛑 Stopping run - timeExpired=" + isTimeExpired);
+        //trace("[UBU10] Stopping run - timeExpired=" + isTimeExpired);
         
         isRunning = false;
         isPaused = true;
@@ -163,32 +163,32 @@ class UBU10Controller {
         // Clean up
         CleanupJsonFiles();
         
-        trace("[UBU10] ✅ Run stopped");
+        //trace("[UBU10] Run stopped");
     }
 
     void PauseRun() {
-        trace("[UBU10] ⏸ Pausing run");
+        //trace("[UBU10] Pausing run");
         isPaused = true;
         
         // Store current remaining time (already calculated by Update())
         // Don't recalculate elapsed time here - Update() already keeps runTimeRemainingMs accurate
         if (runTimeRemainingMs > 0) {
             pausedRemainingMs = runTimeRemainingMs;
-            trace("[UBU10] 💾 Stored remaining time: " + (pausedRemainingMs / 1000) + "s");
+            //trace("[UBU10] Stored remaining time: " + (pausedRemainingMs / 1000) + "s");
         }
         
         runStartTime = -1;
     }
 
     void ResumeRun() {
-        trace("[UBU10] ▶ Resuming run");
+        //trace("[UBU10] Resuming run");
         isPaused = false;
         
         // Restore the exact remaining time from when we paused
         if (pausedRemainingMs > 0) {
             runTimeRemainingMs = pausedRemainingMs;
             runStartRemainingMs = pausedRemainingMs;  // Store for Update calculation
-            trace("[UBU10] ➡ Restored remaining time: " + (runTimeRemainingMs / 1000) + "s");
+            //trace("[UBU10] Restored remaining time: " + (runTimeRemainingMs / 1000) + "s");
         }
         
         runStartTime = Time::Now;
@@ -201,7 +201,7 @@ class UBU10Controller {
         try {
             BRM::ServerInfo@ serverInfo = BRM::GetCurrentServerInfo(cast<CTrackMania>(GetApp()), true);
             if (serverInfo is null || serverInfo.clubId == 0 || serverInfo.roomId == 0) {
-                warn("[UBU10] ⚠ Cannot set time limit - not in a valid club room");
+                warn("[UBU10] Cannot set time limit - not in a valid club room");
                 return;
             }
             
@@ -210,9 +210,9 @@ class UBU10Controller {
                    .SetTimeLimit(timeLimitSeconds)
                    .SaveRoom();
             
-            trace("[UBU10] ⏱ Server time limit updated: " + timeLimitSeconds + "s");
+            //trace("[UBU10] Server time limit updated: " + timeLimitSeconds + "s");
         } catch {
-            warn("[UBU10] ❌ Failed to set time limit: " + getExceptionInfo());
+            warn("[UBU10] Failed to set time limit: " + getExceptionInfo());
         }
     }
 
@@ -220,7 +220,7 @@ class UBU10Controller {
     void SwitchMap() {
         if (isSwitchingMap) return;
         
-        trace("[UBU10] 🔄 Switching map");
+        //trace("[UBU10] Switching map");
         isSwitchingMap = true;
         PauseRun();
 
@@ -230,7 +230,7 @@ class UBU10Controller {
             // Reset player tracker for new map (preserves medal counts)
             if (playerTracker !is null) {
                 playerTracker.ResetForNewMap();
-                trace("[UBU10] 🔄 Player tracker reset for new map (medals preserved)");
+                //trace("[UBU10] Player tracker reset for new map (medals preserved)");
             }
 
             // Get current UID to avoid repeats
@@ -244,25 +244,25 @@ class UBU10Controller {
             @currentMapInfo = mapController.GetNextMap(curUid);
             
             if (currentMapInfo is null) {
-                warn("[UBU10] ❌ No map available");
+                warn("[UBU10] No map available");
                 isSwitchingMap = false;
                 return;
             }
 
-            trace("[UBU10] ✅ Selected map: " + currentMapInfo.Name + " (" + currentMapInfo.MapUid + ")");
+            //trace("[UBU10] Selected map: " + currentMapInfo.Name + " (" + currentMapInfo.MapUid + ")");
 
             // Load medal data from Firebase
             @currentMedalData = FirebaseClient::GetMedalData(currentMapInfo.MapUid);
             
             if (currentMedalData is null) {
-                warn("[UBU10] ⚠ No medal data for map - using defaults");
+                warn("[UBU10] No medal data for map - using defaults");
                 @currentMedalData = MedalData();  // Use defaults
             }
 
             // Load the map
             LoadMapAsync();
         } catch {
-            warn("[UBU10] ❌ Map switch failed: " + getExceptionInfo());
+            warn("[UBU10] Map switch failed: " + getExceptionInfo());
             isSwitchingMap = false;
         }
     }
@@ -289,14 +289,14 @@ class UBU10Controller {
             if (app !is null && app.RootMap !is null && app.RootMap.MapInfo !is null) {
                 if (app.RootMap.MapInfo.MapUid == wantUid) {
                     activated = true;
-                    trace("[UBU10] ✅ Map activated");
+                    //trace("[UBU10] Map activated");
                     break;
                 }
             }
         }
 
         if (!activated) {
-            warn("[UBU10] ⚠ Map activation timeout");
+            warn("[UBU10] Map activation timeout");
         }
 
         isSwitchingMap = false;
@@ -312,11 +312,11 @@ class UBU10Controller {
     void SwitchToSpecificMap(MX::MapInfo@ mapInfo) {
         if (isSwitchingMap) return;
         if (mapInfo is null) {
-            warn("[UBU10] ❌ Cannot switch to null map");
+            warn("[UBU10] Cannot switch to null map");
             return;
         }
         
-        trace("[UBU10] 🎯 Switching to specific map: " + mapInfo.Name);
+        //trace("[UBU10] Switching to specific map: " + mapInfo.Name);
         isSwitchingMap = true;
         
         try {
@@ -325,26 +325,26 @@ class UBU10Controller {
             // Reset player tracker for new map (preserves medal counts)
             if (playerTracker !is null) {
                 playerTracker.ResetForNewMap();
-                trace("[UBU10] 🔄 Player tracker reset for new map (medals preserved)");
+                //trace("[UBU10] Player tracker reset for new map (medals preserved)");
             }
             
             // Set the specific map
             @currentMapInfo = mapInfo;
             
-            trace("[UBU10] ✅ Selected map: " + currentMapInfo.Name + " (" + currentMapInfo.MapUid + ")");
+            //trace("[UBU10] Selected map: " + currentMapInfo.Name + " (" + currentMapInfo.MapUid + ")");
             
             // Load medal data from Firebase
             @currentMedalData = FirebaseClient::GetMedalData(currentMapInfo.MapUid);
             
             if (currentMedalData is null) {
-                warn("[UBU10] ⚠ No medal data for map - using defaults");
+                warn("[UBU10] No medal data for map - using defaults");
                 @currentMedalData = MedalData();  // Use defaults
             }
             
             // Load the map
             LoadMapAsync();
         } catch {
-            warn("[UBU10] ❌ Map switch failed: " + getExceptionInfo());
+            warn("[UBU10] Map switch failed: " + getExceptionInfo());
             isSwitchingMap = false;
         }
     }
@@ -384,15 +384,15 @@ class UBU10Controller {
         for (uint i = 0; i < files.Length; i++) {
             IO::Delete(files[i]);
         }
-        trace("[UBU10] 🧹 Maps folder cleared");
+        //trace("[UBU10] Maps folder cleared");
     }
 
     void CleanupJsonFiles() {
         try {
             string[] files = {
-                "UBU10_MapInfo.json",
-                "UBU10_PlayerInfo.json",
-                "UBU10_targets.json"
+                UBU10Files::MapInfo,
+                UBU10Files::PlayerInfo,
+                UBU10Files::Targets
             };
             
             for (uint i = 0; i < files.Length; i++) {
@@ -401,9 +401,9 @@ class UBU10Controller {
                     IO::Delete(path);
                 }
             }
-            trace("[UBU10] 🧹 JSON files cleaned up");
+            //trace("[UBU10] JSON files cleaned up");
         } catch {
-            warn("[UBU10] ❌ Cleanup failed: " + getExceptionInfo());
+            warn("[UBU10] Cleanup failed: " + getExceptionInfo());
         }
     }
 
@@ -432,6 +432,18 @@ class UBU10Controller {
             case 5: return currentMedalData.hardestTime;
         }
         return -1;
+    }
+
+    vec4 GetMedalColor(uint medalId) {
+        switch (medalId) {
+            case 0: return vec4(0.8, 0.5, 0.3, 1.0);   // Bronze - Possibly Future Addition
+            case 1: return vec4(0.75, 0.75, 0.75, 1.0); // Silver - Possibly Future Addition
+            case 2: return vec4(1.0, 0.84, 0.0, 1.0);   // Gold - Possibly Future Addition
+            case 3: return vec4(0.2, 1.0, 0.2, 1.0);    // Author - Possibly Future Addition
+            case 4: return vec4(0.9, 0.5, 0.0, 1.0);    // Harder (orange)
+            case 5: return vec4(1.0, 0.2, 0.2, 1.0);    // Hardest (red)
+        }
+        return vec4(0.5, 0.5, 0.5, 1.0);
     }
 
     string FormatTime(int ms) {
