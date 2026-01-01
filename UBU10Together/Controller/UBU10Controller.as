@@ -448,13 +448,6 @@ class UBU10Controller {
 
     string FormatTime(int ms) {
         if (ms < 0) return "--:--.---";
-        
-        int totalSeconds = ms / 1000;
-        int minutes = totalSeconds / 60;
-        int seconds = totalSeconds % 60;
-        int millis = ms % 1000;
-        
-        return tostring(minutes) + ":" + (seconds < 10 ? "0" : "") + tostring(seconds) + "." + 
-               (millis < 100 ? "0" : "") + (millis < 10 ? "0" : "") + tostring(millis);
+        return Time::Format(ms);
     }
 }
