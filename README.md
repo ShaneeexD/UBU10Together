@@ -6,7 +6,7 @@ UBU10Together is an OpenPlanet plugin for Trackmania that enables synchronized m
 
 ---
 
-## 🎯 Features
+## Features
 
 ### For Session Hosts
 - **Medal-Based Progression**: Choose target medal (Author, Harder, or Hardest) for the session
@@ -31,7 +31,7 @@ UBU10Together is an OpenPlanet plugin for Trackmania that enables synchronized m
 
 ---
 
-## 📦 Installation
+## Installation
 
 1. Make sure you have [OpenPlanet](https://openplanet.dev/) installed
 2. Install dependencies from OpenPlanet:
@@ -42,7 +42,7 @@ UBU10Together is an OpenPlanet plugin for Trackmania that enables synchronized m
 
 ---
 
-## 🎮 How to Use
+## How to Use
 
 ### For Session Hosts
 
@@ -111,7 +111,7 @@ The overlay updates automatically as you improve your times!
 
 ---
 
-## ⌨️ Hotkey Controls
+## Hotkey Controls
 
 **Default: F1** (change in OpenPlanet Settings → UBU10Together)
 
@@ -133,7 +133,7 @@ You can also toggle windows via the Plugins menu at any time.
 
 ---
 
-## 📝 Notes
+## Notes
 
 - **Firebase Integration**: Medal data is fetched from Firebase Realtime Database
 - **UBU10 Campaign**: Plugin is designed specifically for the UBU10 map pack
@@ -142,7 +142,7 @@ You can also toggle windows via the Plugins menu at any time.
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 **Medal overlay not showing?**
 - Make sure you're in a map from the UBU10 campaign
@@ -165,7 +165,7 @@ You can also toggle windows via the Plugins menu at any time.
 
 ---
 
-## 👨‍💻 Credits
+## Credits
 
 **Author**: ShaneeexD  
 **Category**: Multiplayer  
@@ -180,10 +180,10 @@ You can also toggle windows via the Plugins menu at any time.
 
 ---
 
-## 📄 License
+## License
 
 This plugin is provided as-is for the Trackmania community. Feel free to report issues or suggest features!
 
 ---
 
-**Enjoy playing UBU10 together! 🏎️💨**
+**Enjoy playing UBU10 together!**
