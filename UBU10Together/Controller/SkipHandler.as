@@ -24,7 +24,7 @@ namespace SkipHandler {
         }
         
         if (nextMap is null) {
-            warn("[SkipHandler] ❌ No next map available");
+            warn("[SkipHandler] No next map available");
             return;
         }
         
