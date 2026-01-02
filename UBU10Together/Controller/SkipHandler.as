@@ -11,9 +11,7 @@ namespace SkipHandler {
             warn("[SkipHandler] Cannot skip - run not active");
             return;
         }
-        
-        //trace("[SkipHandler] Skip map requested");
-        
+                
         string currentUid = "";
         auto app = cast<CTrackMania>(GetApp());
         if (app !is null && app.RootMap !is null && app.RootMap.MapInfo !is null) {

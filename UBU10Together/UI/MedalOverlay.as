@@ -133,7 +133,6 @@ class MedalOverlay {
         
         if (currentMapUid.Length == 0) return;
         
-        //trace("[MedalOverlay] Starting async fetch for: " + currentMapUid);
         string url = UBU10Files::FirebaseUrl + currentMapUid + ".json"; 
         @pendingRequest = Net::HttpGet(url);
     }
@@ -151,7 +150,6 @@ class MedalOverlay {
                     if (data !is null) {
                         @currentMedalData = MedalData(data);
                         if (currentMedalData !is null && currentMedalData.IsValid()) {
-                            //trace("[MedalOverlay] Async loaded: " + currentMedalData.mapName);
                         } else {
                             trace("[MedalOverlay] Invalid medal data for: " + currentMapUid);
                         }

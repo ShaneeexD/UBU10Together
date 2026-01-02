@@ -18,7 +18,6 @@ class MedalController {
     void StartWatching() {
         if (isWatching) return;
         isWatching = true;
-        //trace("[MedalController] Started watching");
         startnew(CoroutineFunc(this.WatchLoop));
     }
     
@@ -30,9 +29,7 @@ class MedalController {
         string playerInfoPath = IO::FromStorageFolder(UBU10Files::PlayerInfo);
         if (IO::FileExists(playerInfoPath)) {
             IO::Delete(playerInfoPath);
-        }
-        
-        //trace("[MedalController] Reset for new map (cooldown: " + MAP_CHANGE_COOLDOWN_MS + "ms)");
+        }  
     }
     
     void WatchLoop() {
@@ -47,7 +44,6 @@ class MedalController {
             if (uidNow.Length > 0 && uidNow != currentMapUid) {
                 currentMapUid = uidNow;
                 Reset();
-                //trace("[MedalController] Map changed: " + uidNow);
             }
             
             int timeSinceMapChange = Time::Now - lastMapChangeTime;
@@ -57,7 +53,6 @@ class MedalController {
             
             if (!isWaitingForSwitch && !firstWinnerRecorded) {
                 if (CheckIfTargetMedalReached()) {
-                    //trace("[MedalController] Target medal reached!");
                     isWaitingForSwitch = true;
                     
                     CreditFirstWinner();
@@ -77,13 +72,11 @@ class MedalController {
             
             string uidNow = GetCurrentMapUid();
             if (uidNow.Length > 0 && uidNow != fromUid) {
-                //trace("[MedalController] Map change confirmed");
                 isWaitingForSwitch = false;
                 return;
             }
         }
         
-        //trace("[MedalController] Map change timeout - re-enabling");
         isWaitingForSwitch = false;
     }
     
@@ -119,8 +112,6 @@ class MedalController {
         if (controller.playerTracker !is null && winnerLogin.Length > 0) {
             controller.playerTracker.IncrementPlayerMedalCount(winnerLogin);
         }
-        
-        //trace("[MedalController] Winner credited: " + winnerName);
     }
     
     string GetFirstWinnerName() {
