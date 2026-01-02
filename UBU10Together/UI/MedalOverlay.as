@@ -1,27 +1,23 @@
-// MedalOverlay - In-game overlay showing target medal times
-// Visible to all players with the plugin, not just the host
+// MedalOverlay
 
 class MedalOverlay {
     bool isVisible = false;
     MedalData@ currentMedalData = null;
     string currentMapUid = "";
     int lastFetchTime = 0;
-    bool hasTriedFetch = false; // Only try once per map
-    Net::HttpRequest@ pendingRequest = null; // Async request handling
+    bool hasTriedFetch = false;
+    Net::HttpRequest@ pendingRequest = null;
     
     void Render() {
-        // Check if in playground
         auto app = cast<CTrackMania>(GetApp());
         if (app is null || app.CurrentPlayground is null) {
             currentMapUid = "";
             return;
         }
         
-        // Get current map UID
         string mapUid = GetCurrentMapUid();
         if (mapUid.Length == 0) return;
         
-        // Update medal data if map changed
         if (mapUid != currentMapUid) {
             currentMapUid = mapUid;
             @currentMedalData = null;
@@ -29,19 +25,15 @@ class MedalOverlay {
             @pendingRequest = null;
             FetchMedalDataAsync();
         } else if (currentMedalData is null && !hasTriedFetch && pendingRequest is null) {
-            // Only retry once per map
             FetchMedalDataAsync();
         }
         
-        // Check if async request completed
         CheckAsyncRequest();
         
-        // Only show when have medal data (always visible for all players)
         if (currentMedalData is null) {
             return;
         }
         
-        // Don't show if interface is hidden
         if (!UI::IsGameUIVisible()) return;
         
         int window_flags = UI::WindowFlags::NoTitleBar |
@@ -51,7 +43,6 @@ class MedalOverlay {
                            UI::WindowFlags::AlwaysAutoResize |
                            UI::WindowFlags::NoDocking;
         
-        // Prevent moving when overlay is not shown
         if (!UI::IsOverlayShown()) window_flags |= UI::WindowFlags::NoMove;
         
         if (UI::Begin("UBU10 Medal Times", window_flags)) {
@@ -59,12 +50,11 @@ class MedalOverlay {
             int playerPB = GetPlayerPersonalBest();
             
             if (UI::BeginTable("##medals", 3)) {
-                // Hardest medal row (first)
                 if (medalData.hardestTime > 0) {
                     UI::TableNextRow();
                     
                     UI::TableNextColumn();
-                    vec4 hardestColor = vec4(1.0, 0.2, 0.2, 1.0);  // Red
+                    vec4 hardestColor = vec4(1.0, 0.2, 0.2, 1.0);
                     UI::PushStyleColor(UI::Col::Text, hardestColor);
                     UI::Text("●");
                     UI::PopStyleColor();
@@ -77,22 +67,19 @@ class MedalOverlay {
                     if (playerPB > 0 && playerPB != medalData.hardestTime) {
                         int delta = playerPB - medalData.hardestTime;
                         if (delta > 0) {
-                            // PB is slower - show time needed to improve (red +)
                             timeText += "  \\$f77+" + Time::Format(delta);
                         } else {
-                            // PB is faster - show time beaten by (blue -)
                             timeText += "  \\$77f-" + Time::Format(-delta);
                         }
                     }
                     UI::Text(timeText);
                 }
                 
-                // Harder medal row (second)
                 if (medalData.harderTime > 0) {
                     UI::TableNextRow();
                     
                     UI::TableNextColumn();
-                    vec4 harderColor = vec4(0.9, 0.5, 0.0, 1.0);  // Orange
+                    vec4 harderColor = vec4(0.9, 0.5, 0.0, 1.0);
                     UI::PushStyleColor(UI::Col::Text, harderColor);
                     UI::Text("●");
                     UI::PopStyleColor();
@@ -105,10 +92,8 @@ class MedalOverlay {
                     if (playerPB > 0 && playerPB != medalData.harderTime) {
                         int delta = playerPB - medalData.harderTime;
                         if (delta > 0) {
-                            // PB is slower - show time needed to improve (red +)
                             timeText += "  \\$f77+" + Time::Format(delta);
                         } else {
-                            // PB is faster - show time beaten by (blue -)
                             timeText += "  \\$77f-" + Time::Format(-delta);
                         }
                     }
@@ -148,7 +133,6 @@ class MedalOverlay {
         
         if (currentMapUid.Length == 0) return;
         
-        // Start async Firebase request
         //trace("[MedalOverlay] Starting async fetch for: " + currentMapUid);
         string url = UBU10Files::FirebaseUrl + currentMapUid + ".json"; 
         @pendingRequest = Net::HttpGet(url);
@@ -157,10 +141,8 @@ class MedalOverlay {
     void CheckAsyncRequest() {
         if (pendingRequest is null) return;
         
-        // Check if request finished
         if (!pendingRequest.Finished()) return;
         
-        // Process completed request
         try {
             if (pendingRequest.ResponseCode() == 200) {
                 string jsonStr = pendingRequest.String();
@@ -184,49 +166,24 @@ class MedalOverlay {
             trace("[MedalOverlay] Exception processing response: " + getExceptionInfo());
         }
         
-        // Clear pending request
         @pendingRequest = null;
     }
     
     int GetPlayerPersonalBest() {
-        // Use MLFeed to get current player's best time
         auto raceData = MLFeed::GetRaceData_V4();
         if (raceData is null || raceData.SortedPlayers_TimeAttack is null) {
             return -1;
         }
         
-        // Get current player's login with proper null checks
-        auto app = cast<CTrackMania>(GetApp());
-        if (app is null || app.CurrentPlayground is null) {
-            return -1;
-        }
-        
-        if (app.CurrentPlayground.GameTerminals.Length == 0) {
-            return -1;
-        }
-        
-        auto terminal = app.CurrentPlayground.GameTerminals[0];
-        if (terminal is null || terminal.GUIPlayer is null) {
-            return -1;
-        }
-        
-        auto user = terminal.GUIPlayer.User;
-        if (user is null) {
-            return -1;
-        }
-        
-        string currentLogin = user.Login;
-        
-        // Find current player in race data
         for (uint i = 0; i < raceData.SortedPlayers_TimeAttack.Length; i++) {
             auto player = cast<MLFeed::PlayerCpInfo_V4>(raceData.SortedPlayers_TimeAttack[i]);
             if (player is null) continue;
             
-            if (player.Login == currentLogin) {
+            if (player.IsLocalPlayer) {
                 return player.BestTime;
             }
         }
         
-        return -1; // Player not found or no time set
+        return -1;
     }
 }

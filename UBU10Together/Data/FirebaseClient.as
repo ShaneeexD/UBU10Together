@@ -1,113 +1,84 @@
-// FirebaseClient - Handles fetching medal data from Firebase
+// FirebaseClient
 
 namespace FirebaseClient {
-    // Firebase configuration
     string FIREBASE_BASE_URL = UBU10Files::FirebaseUrl;
-    string FIREBASE_AUTH_TOKEN = "";  // Possibly add in future (set as read rights in the rtb)
-    
-    // Cache for medal data
+    string FIREBASE_AUTH_TOKEN = "";
     dictionary g_medalCache;
     bool g_cacheEnabled = true;
     
-    // Configure Firebase URL
     void SetFirebaseUrl(const string &in url) {
         FIREBASE_BASE_URL = url;
-        //trace("[Firebase] Base URL set to: " + url);
     }
     
     void SetAuthToken(const string &in token) {
         FIREBASE_AUTH_TOKEN = token;
-        //trace("[Firebase] Auth token configured");
     }
     
     void ClearCache() {
         g_medalCache.DeleteAll();
-        //trace("[Firebase] Cache cleared");
     }
     
-    // Fetch medal data for a specific map UID
     MedalData@ GetMedalData(const string &in mapUid) {
         if (mapUid.Length == 0) {
             warn("[Firebase] Empty map UID provided");
             return null;
         }
         
-        // Check cache first
         if (g_cacheEnabled && g_medalCache.Exists(mapUid)) {
-            trace("[Firebase] Cache hit for: " + mapUid);
             MedalData@ cached;
             g_medalCache.Get(mapUid, @cached);
             return cached;
         }
+                
+        string url = FIREBASE_BASE_URL + mapUid + ".json";
+        if (FIREBASE_AUTH_TOKEN.Length > 0) {
+            url += "?auth=" + FIREBASE_AUTH_TOKEN;
+        }
         
-        //trace("[Firebase] Fetching medal data for: " + mapUid);
+        Net::HttpRequest@ req = Net::HttpGet(url);
         
-        try {
-            // Construct Firebase URL
-            string url = FIREBASE_BASE_URL + mapUid + ".json";
-            if (FIREBASE_AUTH_TOKEN.Length > 0) {
-                url += "?auth=" + FIREBASE_AUTH_TOKEN;
-            }
-            
-            // Make HTTP request
-            Net::HttpRequest@ req = Net::HttpGet(url);
-            
-            // Wait for response (with timeout)
-            int startTime = Time::Now;
-            while (!req.Finished()) {
-                yield();
-                if (Time::Now - startTime > 10000) {  // 10s timeout
-                    warn("[Firebase] Request timeout for: " + mapUid);
-                    return null;
-                }
-            }
-            
-            // Check response
-            if (req.ResponseCode() != 200) {
-                warn("[Firebase] HTTP " + req.ResponseCode() + " for: " + mapUid);
+        int startTime = Time::Now;
+        while (!req.Finished()) {
+            yield();
+            if (Time::Now - startTime > 10000) {
+                warn("[Firebase] Request timeout for: " + mapUid);
                 return null;
             }
-            
-            // Parse JSON response
-            string jsonStr = req.String();
-            if (jsonStr.Length == 0 || jsonStr == "null") {
-                warn("[Firebase] No data found for: " + mapUid);
-                return null;
-            }
-            
-            Json::Value data = Json::Parse(jsonStr);
-            if (data is null) {
-                warn("[Firebase] Failed to parse JSON for: " + mapUid);
-                return null;
-            }
-            
-            // Create MedalData object
-            MedalData@ medalData = MedalData(data);
-            
-            if (!medalData.IsValid()) {
-                warn("[Firebase] Invalid medal data for: " + mapUid);
-                return null;
-            }
-            
-            // Cache the result
-            if (g_cacheEnabled) {
-                g_medalCache.Set(mapUid, @medalData);
-                //trace("[Firebase] Cached: " + mapUid);
-            }
-            
-            //trace("[Firebase] Successfully loaded: " + medalData.mapName);
-            return medalData;
-            
-        } catch {
-            warn("[Firebase] Exception fetching data: " + getExceptionInfo());
+        }
+        
+        if (req.ResponseCode() != 200) {
+            warn("[Firebase] HTTP " + req.ResponseCode() + " for: " + mapUid);
             return null;
         }
+        
+        string jsonStr = req.String();
+        if (jsonStr.Length == 0 || jsonStr == "null") {
+            warn("[Firebase] No data found for: " + mapUid);
+            return null;
+        }
+        
+        Json::Value data = Json::Parse(jsonStr);
+        if (data is null) {
+            warn("[Firebase] Failed to parse JSON for: " + mapUid);
+            return null;
+        }
+        
+        MedalData@ medalData = MedalData(data);
+        
+        if (!medalData.IsValid()) {
+            warn("[Firebase] Invalid medal data for: " + mapUid);
+            return null;
+        }
+        
+        if (g_cacheEnabled) {
+            g_medalCache.Set(mapUid, @medalData);
+        }
+        
+        return medalData;
+        
     }
     
-    // Batch fetch all UBU10 medal data for preloading
     dictionary@ GetAllMedalData() {
-        //trace("[Firebase] Fetching all UBU10 medal data");
-        
         try {
             string url = FIREBASE_BASE_URL + ".json";
             if (FIREBASE_AUTH_TOKEN.Length > 0) {
@@ -119,7 +90,7 @@ namespace FirebaseClient {
             int startTime = Time::Now;
             while (!req.Finished()) {
                 yield();
-                if (Time::Now - startTime > 30000) {  // 30s timeout for batch
+                if (Time::Now - startTime > 30000) {
                     warn("[Firebase] Batch request timeout");
                     return null;
                 }
@@ -147,7 +118,6 @@ namespace FirebaseClient {
                 }
             }
             
-            //trace("[Firebase] Loaded " + result.GetSize() + " maps");
             return result;
             
         } catch {
@@ -156,7 +126,6 @@ namespace FirebaseClient {
         }
     }
     
-    // Upload medal data (for testing/admin use)
     bool UploadMedalData(const string &in mapUid, Json::Value@ data) {
         if (mapUid.Length == 0 || data is null) {
             warn("Invalid upload parameters");

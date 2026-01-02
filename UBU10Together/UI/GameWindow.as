@@ -1,9 +1,8 @@
-// GameWindow - Minimal in-game interface
+// GameWindow
 
-// Skip button cooldown guard
 namespace SkipButtonGuard {
     uint lastSkipTime = 0;
-    const uint COOLDOWN_MS = 10000; // 10 seconds cooldown
+    const uint COOLDOWN_MS = 10000;
     
     bool IsCooldownActive(int &out msLeft) {
         if (lastSkipTime == 0) {
@@ -22,9 +21,7 @@ namespace SkipButtonGuard {
 
 class GameWindow {
     UBU10Controller@ controller;
-    bool isVisible = false;  // Only show when running
-    
-    // Leaderboard data (populated by PlayerTracker)
+    bool isVisible = false;
     array<PlayerEntry@> leaderboard;
     
     GameWindow(UBU10Controller@ ctrl) {
@@ -34,19 +31,16 @@ class GameWindow {
     void Render() {
         if (!controller.isRunning || !isVisible) return;
         
-        // Position in top-right corner
         UI::SetNextWindowPos(int(Draw::GetWidth()) - 420, 20, UI::Cond::Always);
         UI::SetNextWindowSize(380, 540, UI::Cond::FirstUseEver);
         
         int flags = UI::WindowFlags::NoCollapse | UI::WindowFlags::NoResize;
         if (UI::Begin("UBU10 Together - Game", isVisible, flags)) {
-            // Header
             UI::PushFont(g_fontHeader);
             UI::Text("\\$f80UBU10 TOGETHER");
             UI::PopFont();
             UI::Separator();
             
-            // Current map
             UI::Text("\\$fffMap:");
             if (controller.currentMapInfo !is null) {
                 UI::Text("  " + controller.currentMapInfo.Name);
@@ -54,7 +48,6 @@ class GameWindow {
                 UI::Text("  Loading...");
             }
             
-            // Target medal
             UI::Text("\\$fffTarget:");
             string medalName = controller.GetMedalName(controller.selectedMedal);
             int targetTime = controller.GetMedalTime(controller.selectedMedal);
@@ -67,29 +60,24 @@ class GameWindow {
             
             UI::Separator();
             
-            // Countdown timer
             UI::Text("\\$fffRemaining Time:");
             DrawCountdown();
             
             UI::Separator();
             
-            // Leaderboard
             UI::Text("\\$fffLeaderboard:");
             DrawLeaderboard();
             
             UI::Separator();
             
-            // Controls
-            // Skip button with cooldown
             int cdLeftMs = 0;
             bool cooldown = SkipButtonGuard::IsCooldownActive(cdLeftMs);
             bool canSkip = controller.isRunning && !controller.isPaused && !controller.isSwitchingMap && !cooldown;
             
-            // Button colors
-            vec4 colEnabled = vec4(0.2f, 0.6f, 1.0f, 1.0f);   // Blue
-            vec4 colHovered = vec4(0.3f, 0.7f, 1.0f, 1.0f);   // Light blue
-            vec4 colActive = vec4(0.1f, 0.5f, 0.9f, 1.0f);    // Dark blue
-            vec4 colDisabled = vec4(0.3f, 0.3f, 0.3f, 0.5f);  // Gray
+            vec4 colEnabled = vec4(0.2f, 0.6f, 1.0f, 1.0f);
+            vec4 colHovered = vec4(0.3f, 0.7f, 1.0f, 1.0f);
+            vec4 colActive = vec4(0.1f, 0.5f, 0.9f, 1.0f);
+            vec4 colDisabled = vec4(0.3f, 0.3f, 0.3f, 0.5f);
             
             UI::PushStyleColor(UI::Col::Button, canSkip ? colEnabled : colDisabled);
             UI::PushStyleColor(UI::Col::ButtonHovered, canSkip ? colHovered : colDisabled);
@@ -102,7 +90,6 @@ class GameWindow {
             }
             if (!canSkip) UI::EndDisabled();
             
-            // Show cooldown tooltip
             if (UI::IsItemHovered() && cooldown) {
                 UI::BeginTooltip();
                 UI::Text("Cooldown: " + (cdLeftMs / 1000 + 1) + "s remaining");
@@ -128,7 +115,6 @@ class GameWindow {
         int remainingMs = controller.runTimeRemainingMs;
         int totalMs = controller.runTimeTotalMs;
         
-        // Format time
         int seconds = remainingMs / 1000;
         int minutes = seconds / 60;
         int hours = minutes / 60;
@@ -139,13 +125,12 @@ class GameWindow {
                           (minutes < 10 ? "0" : "") + tostring(minutes) + ":" + 
                           (seconds < 10 ? "0" : "") + tostring(seconds);
         
-        // Color based on time remaining
         vec4 color;
-        if (remainingMs < 60000) {  // < 1 minute: red
+        if (remainingMs < 60000) {
             color = vec4(1.0, 0.2, 0.2, 1.0);
-        } else if (remainingMs < 300000) {  // < 5 minutes: yellow
+        } else if (remainingMs < 300000) {
             color = vec4(1.0, 0.8, 0.0, 1.0);
-        } else {  // green
+        } else {
             color = vec4(0.2, 1.0, 0.2, 1.0);
         }
         
@@ -155,7 +140,6 @@ class GameWindow {
         UI::PopFont();
         UI::PopStyleColor();
         
-        // Progress bar
         float progress = totalMs > 0 ? float(remainingMs) / float(totalMs) : 0.0;
         UI::ProgressBar(progress, vec2(360, 20));
     }
@@ -166,7 +150,6 @@ class GameWindow {
         if (leaderboard.Length == 0) {
             UI::TextDisabled("No times yet...");
         } else {
-            // Header
             UI::Columns(4, "lb_cols", true);
             UI::Text("Pos"); UI::NextColumn();
             UI::Text("Player"); UI::NextColumn();
@@ -174,20 +157,12 @@ class GameWindow {
             UI::Text("Medals"); UI::NextColumn();
             UI::Separator();
             
-            // Entries
             for (uint i = 0; i < leaderboard.Length && i < 10; i++) {
                 PlayerEntry@ entry = leaderboard[i];
                 
-                // Position
                 UI::Text(tostring(i + 1)); UI::NextColumn();
-                
-                // Name
                 UI::Text(entry.name); UI::NextColumn();
-                
-                // Time
                 UI::Text(controller.FormatTime(entry.time)); UI::NextColumn();
-                
-                // Medal count
                 vec4 color = controller.GetMedalColor(entry.medal);
                 UI::PushStyleColor(UI::Col::Text, color);
                 UI::Text(tostring(entry.medalCount)); UI::NextColumn();
@@ -200,18 +175,16 @@ class GameWindow {
         UI::EndChild();
     }
 
-    // Called by PlayerTracker to update leaderboard
     void UpdateLeaderboard(array<PlayerEntry@>@ entries) {
         leaderboard = entries;
     }
 }
 
-// Player entry for leaderboard
 class PlayerEntry {
     string name;
     int time;
     uint medal;
-    uint medalCount = 0;  // Total medals achieved in this session
+    uint medalCount = 0;
     
     PlayerEntry(const string &in n, int t, uint m, uint mc = 0) {
         name = n;
@@ -220,14 +193,11 @@ class PlayerEntry {
         medalCount = mc;
     }
     
-    // Sort comparison operator
     int opCmp(const PlayerEntry@ other) const {
-        // Players without times (-1) always go to bottom
         if (time < 0 && other.time >= 0) return 1;
         if (time >= 0 && other.time < 0) return -1;
-        if (time < 0 && other.time < 0) return 0; // Both no time, equal
+        if (time < 0 && other.time < 0) return 0;
         
-        // Normal time comparison
         if (time < other.time) return -1;
         if (time > other.time) return 1;
         return 0;

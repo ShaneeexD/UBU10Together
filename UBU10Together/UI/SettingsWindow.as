@@ -1,7 +1,7 @@
-// SettingsWindow - Minimal configuration interface
+// SettingsWindow
 
 class SettingsWindow {
-    bool isOpen = true;  // Start visible so user can configure
+    bool isOpen = true;
     UBU10Controller@ controller;
     
     SettingsWindow(UBU10Controller@ ctrl) {
@@ -13,13 +13,11 @@ class SettingsWindow {
         
         UI::SetNextWindowSize(500, 320, UI::Cond::FirstUseEver);
         if (UI::Begin("UBU10 Together - Settings", isOpen)) {
-            // Title
             UI::PushFont(g_fontHeader);
             UI::Text("\\$f80 🏆 UBU10 TOGETHER");
             UI::PopFont();
             UI::Separator();
             
-            // Medal Selection
             UI::Text("\\$fffTarget Medal:");
             UI::BeginGroup();
             
@@ -38,16 +36,14 @@ class SettingsWindow {
             UI::EndGroup();
             UI::Separator();
             
-            // Runtime
             UI::Text("\\$fffSession Duration:");
             int minutes = int(controller.runTimeMinutes);
             UI::SetNextItemWidth(300);
             minutes = UI::SliderInt("Minutes", minutes, 5, 240);
             controller.runTimeMinutes = uint(minutes);
-            UI::Text("Duration: " + FormatDuration(minutes));
+            UI::Text("Duration: " + controller.FormatDuration(minutes));
             UI::Separator();
             
-            // Start button
             UI::Dummy(vec2(0, 10));
             
             bool canStart = !controller.isRunning;
@@ -63,11 +59,9 @@ class SettingsWindow {
                 UI::EndDisabled();
             }
             
-            // Hotkey info
             UI::Dummy(vec2(0, 5));
             UI::TextDisabled("Press " + g_hotkeySettings + " to toggle UI (Change key in Openplanet > Settings)");
             
-            // Stop button (if running)
             if (controller.isRunning) {
                 UI::Dummy(vec2(0, 5));
                 if (UI::Button("\\$f00 STOP SESSION", vec2(460, 30))) {
@@ -98,26 +92,11 @@ class SettingsWindow {
         return clicked;
     }
 
-    string FormatDuration(int minutes) {
-        int hours = minutes / 60;
-        int mins = minutes % 60;
-        if (hours > 0) {
-            return tostring(hours) + "h " + tostring(mins) + "m";
-        }
-        return tostring(mins) + " minutes";
-    }
-    
     void StartSession() {
-        // Save settings
         controller.SaveSettings();
-        
-        // Start the run
         controller.StartRun();
-        
-        // Close settings window
         isOpen = false;
     }
 }
 
-// Font for header (initialize in Main.as if needed)
 UI::Font@ g_fontHeader = null;

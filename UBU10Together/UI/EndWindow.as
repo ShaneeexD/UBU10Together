@@ -1,4 +1,4 @@
-// EndWindow - Minimal end screen
+// EndWindow
 
 class EndWindow {
     bool isOpen = false;
@@ -26,7 +26,6 @@ class EndWindow {
         if (UI::Begin("Session Complete!", isOpen, flags)) {
             UI::Dummy(vec2(0, 20));
             
-            // Title
             UI::PushFont(g_fontHeader);
             UI::SetCursorPos(vec2(UI::GetWindowSize().x / 2 - 150, UI::GetCursorPos().y));
             UI::Text("\\$0f0SESSION COMPLETE!");
@@ -36,7 +35,6 @@ class EndWindow {
             UI::Separator();
             UI::Dummy(vec2(0, 20));
             
-            // Winner display
             if (winnerName.Length > 0) {
                 UI::PushFont(g_fontHeader);
                 UI::Text("\\$ff0 🏆 Winner:");
@@ -60,14 +58,12 @@ class EndWindow {
             UI::Separator();
             UI::Dummy(vec2(0, 20));
             
-            // Stats
             UI::Text("\\$fffSession Statistics:");
             UI::Text("  Target Medal: " + controller.GetMedalName(controller.selectedMedal));
-            UI::Text("  Duration: " + FormatDuration(controller.runTimeMinutes));
+            UI::Text("  Duration: " + controller.FormatDuration(controller.runTimeMinutes));
             
             UI::Dummy(vec2(0, 30));
             
-            // Return button
             UI::SetCursorPos(vec2(UI::GetWindowSize().x / 2 - 100, UI::GetCursorPos().y));
             if (UI::Button("Return to Menu", vec2(200, 40))) {
                 isOpen = false;
@@ -79,7 +75,6 @@ class EndWindow {
     }
     
     void LoadWinnerData() {
-        // Get winner from PlayerTracker
         if (controller is null || controller.playerTracker is null) {
             winnerName = "No data";
             winnerCount = 0;
@@ -87,15 +82,5 @@ class EndWindow {
         }
         
         controller.playerTracker.GetWinner(winnerName, winnerCount);
-        //trace("[EndWindow] Winner: " + winnerName + " with " + winnerCount + " medals");
-    }
-    
-    string FormatDuration(uint minutes) {
-        uint hours = minutes / 60;
-        uint mins = minutes % 60;
-        if (hours > 0) {
-            return tostring(hours) + "h " + tostring(mins) + "m";
-        }
-        return tostring(minutes) + " minutes";
     }
 }

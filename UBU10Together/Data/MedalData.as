@@ -1,33 +1,23 @@
-// MedalData - Structure for holding medal times for a map
+// MedalData
 
 class MedalData {
     string mapUid = "";
     int trackId = 0;
     string mapName = "";
     
-    // Official medals (ms)
     int bronzeTime = -1;
     int silverTime = -1;
     int goldTime = -1;
     int authorTime = -1;
-    
-    // Custom UBU10 medals (ms)
-    int harderTime = -1;   // 1/8 toward WR from Author
-    int hardestTime = -1;  // Time_A if enough records, else Time_B
-    
-    // World record
+    int harderTime = -1;
+    int hardestTime = -1;
     int wrTime = -1;
-    
-    // Metadata
     int recordsCount = 0;
-    string method = "";    // "Time_A" or "Time_B"
+    string method = "";
     
-    MedalData() {
-        // Default constructor
-    }
+    MedalData() {}
     
     MedalData(Json::Value@ data) {
-        // Constructor from JSON
         if (data is null) return;
         
         try {
@@ -39,7 +29,6 @@ class MedalData {
             if (data.HasKey("wrTime_ms")) wrTime = int(data["wrTime_ms"]);
             if (data.HasKey("recordsCount")) recordsCount = int(data["recordsCount"]);
             
-            // Computed times
             if (data.HasKey("computed")) {
                 Json::Value computed = data["computed"];
                 if (computed.HasKey("harderTime_ms")) harderTime = int(computed["harderTime_ms"]);

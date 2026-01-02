@@ -1,17 +1,18 @@
-// PlayerTracker - Tracks player progress and updates leaderboard
-// Uses MLFeed for race data access
+// PlayerTracker - Tracks player times and medals
 
 class PlayerTracker {
     UBU10Controller@ controller;
     GameWindow@ gameWindow;
     
-    dictionary playerTimes;  // playerName -> PlayerData
-    dictionary playerMedalCounts;  // playerLogin -> medal count for session
-    dictionary playerNames;  // playerLogin -> display name
+    dictionary playerTimes;
+    dictionary playerMedalCounts;
+    dictionary playerNames;
     array<PlayerEntry@> sortedEntries;
     
     int lastUpdateTime = 0;
-    int UPDATE_INTERVAL = 1000;  // Update every second
+    int UPDATE_INTERVAL = 1000;
+    bool playerDataDirty = false;
+    int lastRecordTime = -1;
     
     PlayerTracker(UBU10Controller@ ctrl, GameWindow@ gw) {
         @controller = ctrl;
@@ -25,25 +26,25 @@ class PlayerTracker {
         if (now - lastUpdateTime < UPDATE_INTERVAL) return;
         lastUpdateTime = now;
         
-        // Get player data from MLFeed
         UpdatePlayerDataFromFeed();
-        
-        // Update leaderboard
         UpdateLeaderboard();
-        
-        // Save to JSON for MedalController
         SavePlayerInfo();
     }
     
     void UpdatePlayerDataFromFeed() {
-        // Use MLFeed V4 to get race data
         auto raceData = MLFeed::GetRaceData_V4();
         if (raceData is null || raceData.SortedPlayers_TimeAttack is null) return;
         
-        // Process each player in time attack
+        if (raceData.LastRecordTime != lastRecordTime && raceData.LastRecordTime > 0) {
+            lastRecordTime = raceData.LastRecordTime;
+            playerDataDirty = true;
+        }
+        
         for (uint i = 0; i < raceData.SortedPlayers_TimeAttack.Length; i++) {
             auto player = cast<MLFeed::PlayerCpInfo_V4>(raceData.SortedPlayers_TimeAttack[i]);
             if (player is null) continue;
+            
+            if (!player.IsSpawned) continue;
             
             ProcessPlayerFromFeed(player);
         }
@@ -52,37 +53,32 @@ class PlayerTracker {
     void ProcessPlayerFromFeed(MLFeed::PlayerCpInfo_V4@ player) {
         if (player is null || player.Name == "") return;
         
-        string login = player.Login;
+        string identifier = player.WebServicesUserId;
+        if (identifier == "") identifier = player.Login;
         string name = player.Name;
         
-        // Store player name for this login (for persistent leaderboard display)
-        playerNames.Set(login, name);
+        playerNames.Set(identifier, name);
         
-        // Get best time
         int bestTime = player.BestTime;
-        if (bestTime <= 0) return;  // No valid time yet
+        if (bestTime <= 0) return;
         
-        // Calculate medal achieved
         uint medal = CalculateMedal(bestTime);
-        
-        // Store or update player data
         PlayerData@ data;
-        if (playerTimes.Exists(login)) {
-            playerTimes.Get(login, @data);
+        if (playerTimes.Exists(identifier)) {
+            playerTimes.Get(identifier, @data);
             
-            // Update if better time
             if (bestTime < data.time) {
                 data.time = bestTime;
                 data.medal = medal;
+                playerDataDirty = true;
             }
         } else {
-            @data = PlayerData(name, login, bestTime, medal);
-            playerTimes.Set(login, @data);
+            @data = PlayerData(name, identifier, bestTime, medal);
+            playerTimes.Set(identifier, @data);
+            playerDataDirty = true;
         }
     }
-    
-    // Note: Fallback direct game API removed - MLFeed V4 is required for proper race data
-    
+        
     uint CalculateMedal(int time) {
         if (controller.currentMedalData is null) {
             return 0;  // No medal
@@ -90,31 +86,25 @@ class PlayerTracker {
         
         auto md = controller.currentMedalData;
         
-        // Check medals from highest to lowest
-        if (md.hardestTime > 0 && time <= md.hardestTime) return 5;  // Hardest
-        if (md.harderTime > 0 && time <= md.harderTime) return 4;    // Harder
-        if (md.authorTime > 0 && time <= md.authorTime) return 3;    // Author
-        if (md.goldTime > 0 && time <= md.goldTime) return 2;        // Gold
-        if (md.silverTime > 0 && time <= md.silverTime) return 1;    // Silver
-        if (md.bronzeTime > 0 && time <= md.bronzeTime) return 0;    // Bronze
+        if (md.hardestTime > 0 && time <= md.hardestTime) return 5;
+        if (md.harderTime > 0 && time <= md.harderTime) return 4;
+        if (md.authorTime > 0 && time <= md.authorTime) return 3;
+        if (md.goldTime > 0 && time <= md.goldTime) return 2;
+        if (md.silverTime > 0 && time <= md.silverTime) return 1;
+        if (md.bronzeTime > 0 && time <= md.bronzeTime) return 0;
         
-        return 0;  // No medal
+        return 0;
     }
     
     void UpdateLeaderboard() {
-        // Clear sorted entries
         sortedEntries.RemoveRange(0, sortedEntries.Length);
-        
-        // Track which players we've already added from playerTimes
         dictionary addedPlayers;
         
-        // First, add all players who have driven times on this map
         auto timeKeys = playerTimes.GetKeys();
         for (uint i = 0; i < timeKeys.Length; i++) {
             PlayerData@ data;
             playerTimes.Get(timeKeys[i], @data);
             
-            // Get medal count for this player
             uint medalCount = 0;
             if (playerMedalCounts.Exists(data.login)) {
                 int64 count;
@@ -127,40 +117,36 @@ class PlayerTracker {
             addedPlayers.Set(data.login, true);
         }
         
-        // Then, add players who have medal counts but no time on current map
         auto medalKeys = playerMedalCounts.GetKeys();
         for (uint i = 0; i < medalKeys.Length; i++) {
             string login = medalKeys[i];
             
-            // Skip if already added
             if (addedPlayers.Exists(login)) continue;
             
-            // Get player name from stored names (use login as fallback)
             string playerName = login;
             if (playerNames.Exists(login)) {
                 playerNames.Get(login, playerName);
             }
             
-            // Get medal count
             int64 count;
             playerMedalCounts.Get(login, count);
             uint medalCount = uint(count);
             
-            // Create entry with no time (-1 will display as "--:--.---")
             PlayerEntry@ entry = PlayerEntry(playerName, -1, 0, medalCount);
             sortedEntries.InsertLast(entry);
         }
         
-        // Sort by time (ascending, players without times go to bottom)
         sortedEntries.SortAsc();
         
-        // Update game window
         if (gameWindow !is null) {
             gameWindow.UpdateLeaderboard(sortedEntries);
         }
     }
     
     void SavePlayerInfo() {
+        if (!playerDataDirty) return;
+        playerDataDirty = false;
+        
         string path = IO::FromStorageFolder(UBU10Files::PlayerInfo);
         
         Json::Value arr = Json::Array();
@@ -183,7 +169,6 @@ class PlayerTracker {
     }
     
     void IncrementPlayerMedalCount(const string &in playerLogin) {
-        // Increment the medal count for this player in the session
         int64 count = 0;
         if (playerMedalCounts.Exists(playerLogin)) {
             playerMedalCounts.Get(playerLogin, count);
@@ -191,17 +176,14 @@ class PlayerTracker {
         count++;
         playerMedalCounts.Set(playerLogin, count);
         
-        // Update leaderboard immediately to show new medal count
         UpdateLeaderboard();
         //trace("[PlayerTracker] Medal awarded to " + playerLogin + " (total: " + count + ")");
     }
     
     void ResetForNewMap() {
-        // Clear times for new map but keep medal counts for the session
         playerTimes.DeleteAll();
         sortedEntries.RemoveRange(0, sortedEntries.Length);
         
-        // Clear saved data
         string path = IO::FromStorageFolder(UBU10Files::PlayerInfo);
         if (IO::FileExists(path)) {
             IO::Delete(path);
@@ -211,13 +193,11 @@ class PlayerTracker {
     }
     
     void Reset() {
-        // Full reset including medal counts (for session end)
         playerTimes.DeleteAll();
         playerMedalCounts.DeleteAll();
         playerNames.DeleteAll();
         sortedEntries.RemoveRange(0, sortedEntries.Length);
         
-        // Clear saved data
         string path = IO::FromStorageFolder(UBU10Files::PlayerInfo);
         if (IO::FileExists(path)) {
             IO::Delete(path);
@@ -226,7 +206,6 @@ class PlayerTracker {
         //trace("[PlayerTracker] Full reset");
     }
     
-    // Get player with most medals for end screen
     void GetWinner(string &out name, int &out count) {
         name = "";
         count = 0;
@@ -240,11 +219,10 @@ class PlayerTracker {
             if (int(medalCount) > count) {
                 count = int(medalCount);
                 
-                // Get display name from playerNames
                 if (playerNames.Exists(login)) {
                     playerNames.Get(login, name);
                 } else {
-                    name = login;  // Fallback to login
+                    name = login;
                 }
             }
         }

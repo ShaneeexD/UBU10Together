@@ -1,39 +1,34 @@
-// UBU10Controller - Main controller for the Together mode
-// Manages session state, timing, map rotation, and medal progression
+// UBU10Controller - Main session controller
 
 class UBU10Controller {
-    // Run state
     bool isRunning = false;
     bool isPaused = false;
     bool isSwitchingMap = false;
     bool runFinished = false;
     bool isFirstMap = true;
 
+    
     // Settings
-    uint runTimeMinutes = 120;  // Default 120 minutes
-    uint selectedMedal = 3;     // 0=Bronze, 1=Silver, 2=Gold, 3=Author, 4=Harder, 5=Hardest
+    uint runTimeMinutes = 120;
+    uint selectedMedal = 3;  // 0=Bronze, 1=Silver, 2=Gold, 3=Author, 4=Harder, 5=Hardest
 
     // Timing
     int runTimeRemainingMs = -1;
     int runStartTime = -1;
     int runTimeTotalMs = -1;
-    int pausedRemainingMs = -1;  // Store remaining time when paused for map change
-    int runStartRemainingMs = -1;  // Store remaining time when timer was started/resumed
+    int pausedRemainingMs = -1;
+    int runStartRemainingMs = -1;
 
     // Current map
     MX::MapInfo@ currentMapInfo;
     MedalData@ currentMedalData;
 
-    // Controllers
     MapController@ mapController;
     MedalController@ medalController;
     PlayerTracker@ playerTracker;
-    
-    // UI
     EndWindow@ endWindow;
     bool hasShownEndWindow = false;
 
-    // Constructor
     UBU10Controller() {
         @medalController = MedalController(this);
         @mapController = MapController();
@@ -48,7 +43,6 @@ class UBU10Controller {
         @endWindow = wnd;
     }
 
-    // ===== Settings Management =====
     void LoadSettings() {
         try {
             string path = IO::FromStorageFolder(UBU10Files::Settings);
@@ -56,7 +50,6 @@ class UBU10Controller {
                 Json::Value s = Json::FromFile(path);
                 if (s.HasKey("runTimeMinutes")) runTimeMinutes = uint(int(s["runTimeMinutes"]));
                 if (s.HasKey("selectedMedal")) selectedMedal = uint(int(s["selectedMedal"]));
-                //trace("[UBU10] Settings loaded | time=" + runTimeMinutes + "min medal=" + selectedMedal);
             }
         } catch {
             warn("[UBU10] Failed to load settings: " + getExceptionInfo());
@@ -70,13 +63,11 @@ class UBU10Controller {
             s["selectedMedal"] = selectedMedal;
             string path = IO::FromStorageFolder(UBU10Files::Settings);
             Json::ToFile(path, s);
-            //trace("[UBU10] Settings saved");
         } catch {
             warn("[UBU10] Failed to save settings: " + getExceptionInfo());
         }
     }
 
-    // ===== Run Control =====
     void StartRun() {
         //trace("[UBU10] Starting run");
         startnew(CoroutineFunc(this.PerformStartup));
@@ -88,12 +79,8 @@ class UBU10Controller {
             return;
         }
 
-        // Clean up previous run
         ClearMapsFolder();
         LoadSettings();
-
-        // Initialize map list
-        //trace("[UBU10] Loading UBU10 map list");
         if (!mapController.LoadMapList()) {
             warn("[UBU10] Failed to load map list");
             return;
@@ -103,25 +90,21 @@ class UBU10Controller {
         isPaused = false;
         runStartTime = Time::Now;
         
-        // Set up timing
         if (runTimeMinutes > 0) {
             runTimeTotalMs = runTimeMinutes * 60 * 1000;
             runTimeRemainingMs = runTimeTotalMs;
-            runStartRemainingMs = runTimeTotalMs;  // Store what we're starting with
+            runStartRemainingMs = runTimeTotalMs;
         }
 
-        // Set server time limit via BRM
         if (runTimeMinutes > 0) {
             int timeLimitSeconds = int(runTimeMinutes) * 60;
             SetServerTimeLimit(timeLimitSeconds);
             //trace("[UBU10] Server time limit set to " + timeLimitSeconds + " seconds");
         }
 
-        // Start medal controller
         medalController.Reset();
         medalController.StartWatching();
 
-        // Show game window and medal overlay
         if (g_gameWindow !is null) {
             g_gameWindow.isVisible = true;
         }
@@ -129,7 +112,6 @@ class UBU10Controller {
             g_medalOverlay.Show();
         }
 
-        // Load first map
         SwitchMap();
     }
 
@@ -143,16 +125,13 @@ class UBU10Controller {
         @currentMedalData = null;
         runStartTime = -1;
 
-        // Stop controllers
         if (medalController !is null) {
             medalController.Reset();
         }
-        
         if (playerTracker !is null) {
             playerTracker.Reset();
         }
         
-        // Hide game window and medal overlay
         if (g_gameWindow !is null) {
             g_gameWindow.isVisible = false;
         }
@@ -160,7 +139,6 @@ class UBU10Controller {
             g_medalOverlay.Hide();
         }
 
-        // Clean up
         CleanupJsonFiles();
         
         //trace("[UBU10] Run stopped");
@@ -170,8 +148,6 @@ class UBU10Controller {
         //trace("[UBU10] Pausing run");
         isPaused = true;
         
-        // Store current remaining time (already calculated by Update())
-        // Don't recalculate elapsed time here - Update() already keeps runTimeRemainingMs accurate
         if (runTimeRemainingMs > 0) {
             pausedRemainingMs = runTimeRemainingMs;
             //trace("[UBU10] Stored remaining time: " + (pausedRemainingMs / 1000) + "s");
@@ -184,20 +160,16 @@ class UBU10Controller {
         //trace("[UBU10] Resuming run");
         isPaused = false;
         
-        // Restore the exact remaining time from when we paused
         if (pausedRemainingMs > 0) {
             runTimeRemainingMs = pausedRemainingMs;
-            runStartRemainingMs = pausedRemainingMs;  // Store for Update calculation
+            runStartRemainingMs = pausedRemainingMs;
             //trace("[UBU10] Restored remaining time: " + (runTimeRemainingMs / 1000) + "s");
         }
         
         runStartTime = Time::Now;
-        
-        // Note: Server time limit is already set by LoadMapAsync
     }
     
     void SetServerTimeLimit(int timeLimitSeconds) {
-        // Set the server time limit via BetterRoomManager
         try {
             BRM::ServerInfo@ serverInfo = BRM::GetCurrentServerInfo(cast<CTrackMania>(GetApp()), true);
             if (serverInfo is null || serverInfo.clubId == 0 || serverInfo.roomId == 0) {
@@ -216,7 +188,6 @@ class UBU10Controller {
         }
     }
 
-    // ===== Map Management =====
     void SwitchMap() {
         if (isSwitchingMap) return;
         
@@ -227,20 +198,17 @@ class UBU10Controller {
         try {
             medalController.Reset();
             
-            // Reset player tracker for new map (preserves medal counts)
             if (playerTracker !is null) {
                 playerTracker.ResetForNewMap();
                 //trace("[UBU10] Player tracker reset for new map (medals preserved)");
             }
 
-            // Get current UID to avoid repeats
             string curUid = "";
             auto app = cast<CTrackMania>(GetApp());
             if (app !is null && app.RootMap !is null && app.RootMap.MapInfo !is null) {
                 curUid = app.RootMap.MapInfo.MapUid;
             }
 
-            // Get next map
             @currentMapInfo = mapController.GetNextMap(curUid);
             
             if (currentMapInfo is null) {
@@ -251,15 +219,13 @@ class UBU10Controller {
 
             //trace("[UBU10] Selected map: " + currentMapInfo.Name + " (" + currentMapInfo.MapUid + ")");
 
-            // Load medal data from Firebase
             @currentMedalData = FirebaseClient::GetMedalData(currentMapInfo.MapUid);
             
             if (currentMedalData is null) {
                 warn("[UBU10] No medal data for map - using defaults");
-                @currentMedalData = MedalData();  // Use defaults
+                @currentMedalData = MedalData();
             }
 
-            // Load the map
             LoadMapAsync();
         } catch {
             warn("[UBU10] Map switch failed: " + getExceptionInfo());
@@ -268,20 +234,17 @@ class UBU10Controller {
     }
 
     void LoadMapAsync() {
-        // Calculate remaining time in seconds to pass to map loader
         int timeLimitSeconds = -1;
         if (runTimeTotalMs > 0 && runTimeRemainingMs > 0) {
             timeLimitSeconds = runTimeRemainingMs / 1000;
         }
         
-        // Load map to room with time limit
         mapController.LoadMapToRoom(currentMapInfo, timeLimitSeconds);
 
         const string wantUid = currentMapInfo.MapUid;
         uint startTime = Time::Now;
         bool activated = false;
 
-        // Wait for map activation (30s timeout)
         while (Time::Now - startTime < 30000) {
             yield();
 
@@ -322,18 +285,15 @@ class UBU10Controller {
         try {
             medalController.Reset();
             
-            // Reset player tracker for new map (preserves medal counts)
             if (playerTracker !is null) {
                 playerTracker.ResetForNewMap();
                 //trace("[UBU10] Player tracker reset for new map (medals preserved)");
             }
             
-            // Set the specific map
             @currentMapInfo = mapInfo;
             
             //trace("[UBU10] Selected map: " + currentMapInfo.Name + " (" + currentMapInfo.MapUid + ")");
             
-            // Load medal data from Firebase
             @currentMedalData = FirebaseClient::GetMedalData(currentMapInfo.MapUid);
             
             if (currentMedalData is null) {
@@ -341,7 +301,6 @@ class UBU10Controller {
                 @currentMedalData = MedalData();  // Use defaults
             }
             
-            // Load the map
             LoadMapAsync();
         } catch {
             warn("[UBU10] Map switch failed: " + getExceptionInfo());
@@ -349,18 +308,14 @@ class UBU10Controller {
         }
     }
 
-    // ===== Update Loop =====
     void Update(float dt) {
         if (!isRunning || isPaused || isSwitchingMap) return;
 
-        // Update remaining time
         if (runTimeTotalMs > 0 && runStartTime > 0 && runStartRemainingMs > 0) {
             int elapsed = Time::Now - runStartTime;
             runTimeRemainingMs = runStartRemainingMs - elapsed;
 
-            // Check if time expired
             if (runTimeRemainingMs <= 0 && !hasShownEndWindow) {
-                // Open end window BEFORE stopping (so it can read winner data before reset)
                 if (endWindow !is null) {
                     endWindow.Open();
                     hasShownEndWindow = true;
@@ -369,13 +324,11 @@ class UBU10Controller {
             }
         }
         
-        // Update player tracking
         if (playerTracker !is null) {
             playerTracker.Update();
         }
     }
 
-    // ===== Helpers =====
     void ClearMapsFolder() {
         string folder = IO::FromStorageFolder("Maps/");
         if (!IO::FolderExists(folder)) return;
@@ -407,7 +360,6 @@ class UBU10Controller {
         }
     }
 
-    // ===== Medal Info =====
     string GetMedalName(uint medal) {
         switch (medal) {
             case 0: return "Bronze";
@@ -436,12 +388,12 @@ class UBU10Controller {
 
     vec4 GetMedalColor(uint medalId) {
         switch (medalId) {
-            case 0: return vec4(0.8, 0.5, 0.3, 1.0);   // Bronze - Possibly Future Addition
-            case 1: return vec4(0.75, 0.75, 0.75, 1.0); // Silver - Possibly Future Addition
-            case 2: return vec4(1.0, 0.84, 0.0, 1.0);   // Gold - Possibly Future Addition
-            case 3: return vec4(0.2, 1.0, 0.2, 1.0);    // Author - Possibly Future Addition
-            case 4: return vec4(0.9, 0.5, 0.0, 1.0);    // Harder (orange)
-            case 5: return vec4(1.0, 0.2, 0.2, 1.0);    // Hardest (red)
+            case 0: return vec4(0.8, 0.5, 0.3, 1.0);   // Bronze
+            case 1: return vec4(0.75, 0.75, 0.75, 1.0); // Silver
+            case 2: return vec4(1.0, 0.84, 0.0, 1.0);   // Gold
+            case 3: return vec4(0.2, 1.0, 0.2, 1.0);    // Author
+            case 4: return vec4(0.9, 0.5, 0.0, 1.0);    // Harder
+            case 5: return vec4(1.0, 0.2, 0.2, 1.0);    // Hardest
         }
         return vec4(0.5, 0.5, 0.5, 1.0);
     }
@@ -449,5 +401,14 @@ class UBU10Controller {
     string FormatTime(int ms) {
         if (ms < 0) return "--:--.---";
         return Time::Format(ms);
+    }
+
+    string FormatDuration(uint minutes) {
+        uint hours = minutes / 60;
+        uint mins = minutes % 60;
+        if (hours > 0) {
+            return tostring(hours) + "h " + tostring(mins) + "m";
+        }
+        return tostring(minutes) + " minutes";
     }
 }
